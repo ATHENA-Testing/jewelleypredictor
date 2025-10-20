@@ -149,7 +149,8 @@ const Index = () => {
               <div className="lg:col-span-2">
                 <PredictionChart data={predictionData} metal={selectedMetal} />
               </div>
-              <div>
+              <div className="space-y-6">
+                <CurrencyConverter />
                 <MarketNews />
               </div>
             </div>
