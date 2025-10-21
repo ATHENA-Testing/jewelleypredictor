@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
 import { PredictionChart } from "@/components/Dashboard/PredictionChart";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, RefreshCw, Activity } from "lucide-react";
+import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
 import { useCurrency, EXCHANGE_RATES } from "@/contexts/CurrencyContext";
+import { useMetalPrices } from "@/hooks/useMetalPrices";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Mock data generators
 const generatePredictionData = (basePrice: number) => {
@@ -34,12 +37,6 @@ const generatePredictionData = (basePrice: number) => {
   return data;
 };
 
-const INITIAL_METALS = [
-  { metal: "Gold", symbol: "XAU/USD", price: 2045.50, change: 12.30, changePercent: 0.61, unit: "per oz", colorClass: "border-gold/50 hover:border-gold" },
-  { metal: "Silver", symbol: "XAG/USD", price: 24.85, change: -0.15, changePercent: -0.60, unit: "per oz", colorClass: "border-silver/50 hover:border-silver" },
-  { metal: "Platinum", symbol: "XPT/USD", price: 945.20, change: 5.80, changePercent: 0.62, unit: "per oz", colorClass: "border-platinum/50 hover:border-platinum" },
-  { metal: "Palladium", symbol: "XPD/USD", price: 1235.40, change: -8.20, changePercent: -0.66, unit: "per oz", colorClass: "border-palladium/50 hover:border-palladium" },
-];
 
 const TECHNICAL_INDICATORS = [
   { name: "RSI (14)", value: 65.4, signal: "bullish" as const, description: "Momentum indicator suggesting upward pressure" },
@@ -49,42 +46,15 @@ const TECHNICAL_INDICATORS = [
 ];
 
 const Index = () => {
-  const [metals, setMetals] = useState(INITIAL_METALS);
   const [selectedMetal, setSelectedMetal] = useState("Gold");
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const { currency, setCurrency } = useCurrency();
+  const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Simulate real-time price updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setMetals(prevMetals => 
-        prevMetals.map(metal => {
-          const change = (Math.random() - 0.5) * 2;
-          const newPrice = metal.price + change;
-          const newChange = metal.change + change;
-          const newChangePercent = (newChange / metal.price) * 100;
-          
-          return {
-            ...metal,
-            price: newPrice,
-            change: newChange,
-            changePercent: newChangePercent,
-          };
-        })
-      );
-      setLastUpdate(new Date());
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setLastUpdate(new Date());
-    }, 1000);
+    await refetch();
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   const selectedMetalData = metals.find(m => m.metal === selectedMetal);
@@ -141,13 +111,27 @@ const Index = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Metal Price Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {metals.map((metal) => (
-            <div key={metal.metal} onClick={() => setSelectedMetal(metal.metal)} className="cursor-pointer">
-              <MetalPriceCard {...metal} />
-            </div>
-          ))}
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 rounded-lg" />
+            ))
+          ) : (
+            metals.map((metal) => (
+              <div key={metal.metal} onClick={() => setSelectedMetal(metal.metal)} className="cursor-pointer">
+                <MetalPriceCard {...metal} />
+              </div>
+            ))
+          )}
         </div>
 
         {/* Main Content Tabs */}
