@@ -8,7 +8,9 @@ import { MarketNews } from "@/components/Dashboard/MarketNews";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, RefreshCw, Activity } from "lucide-react";
+import { useCurrency, EXCHANGE_RATES } from "@/contexts/CurrencyContext";
 
 // Mock data generators
 const generatePredictionData = (basePrice: number) => {
@@ -51,6 +53,7 @@ const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { currency, setCurrency } = useCurrency();
 
   // Simulate real-time price updates
   useEffect(() => {
@@ -104,6 +107,18 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-3">
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(EXCHANGE_RATES).map((curr) => (
+                    <SelectItem key={curr} value={curr}>
+                      {curr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Badge variant="outline" className="flex items-center gap-2">
                 <Activity className="w-3 h-3 text-success animate-pulse" />
                 <span className="text-xs">Live Market Data</span>

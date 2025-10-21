@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from "recharts";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PredictionChartProps {
   data: Array<{
@@ -13,6 +14,7 @@ interface PredictionChartProps {
 }
 
 export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
+  const { convertPrice, currency } = useCurrency();
   const metalColors: Record<string, string> = {
     Gold: "#F59E0B",
     Silver: "#94A3B8",
@@ -22,6 +24,14 @@ export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
 
   const color = metalColors[metal] || "#3B82F6";
 
+  const convertedData = data.map(item => ({
+    date: item.date,
+    actual: item.actual ? convertPrice(item.actual) : null,
+    predicted: convertPrice(item.predicted),
+    confidence_high: convertPrice(item.confidence_high),
+    confidence_low: convertPrice(item.confidence_low),
+  }));
+
   return (
     <Card className="p-6 bg-gradient-card border-2 border-border">
       <div className="mb-4">
@@ -30,7 +40,7 @@ export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
       </div>
 
       <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={data}>
+        <ComposedChart data={convertedData}>
           <defs>
             <linearGradient id={`confidence-${metal}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor={color} stopOpacity={0.3} />
@@ -46,7 +56,7 @@ export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
           <YAxis 
             stroke="hsl(var(--muted-foreground))"
             tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
-            tickFormatter={(value) => `$${value}`}
+            tickFormatter={(value) => `${value.toFixed(0)}`}
           />
           <Tooltip
             contentStyle={{
@@ -55,7 +65,7 @@ export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
               borderRadius: "8px",
               color: "hsl(var(--foreground))",
             }}
-            formatter={(value: number) => [`$${value.toFixed(2)}`, ""]}
+            formatter={(value: number) => [`${value.toFixed(2)} ${currency}`, ""]}
           />
           <Legend 
             wrapperStyle={{
