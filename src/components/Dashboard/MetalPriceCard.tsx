@@ -1,12 +1,12 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface MetalPriceCardProps {
   metal: string;
   symbol: string;
   price: number;
+  pricePerGram: number;
   change: number;
   changePercent: number;
   unit: string;
@@ -16,14 +16,13 @@ interface MetalPriceCardProps {
 export const MetalPriceCard = ({
   metal,
   symbol,
-  price,
+  pricePerGram,
   change,
   changePercent,
   unit,
   colorClass,
 }: MetalPriceCardProps) => {
   const isPositive = change >= 0;
-  const { formatPrice, convertPrice } = useCurrency();
 
   return (
     <Card className={cn(
@@ -50,14 +49,14 @@ export const MetalPriceCard = ({
 
         <div className="space-y-2">
           <div className="text-3xl font-bold text-foreground">
-            {formatPrice(price)}
+            ₹{pricePerGram.toFixed(2)}
           </div>
           <div className="flex items-baseline gap-2">
             <span className={cn(
               "text-sm font-medium",
               isPositive ? "text-success" : "text-danger"
             )}>
-              {isPositive ? "+" : ""}{convertPrice(change).toFixed(2)}
+              {isPositive ? "+" : ""}₹{(change / 31.1035).toFixed(2)}
             </span>
             <span className="text-xs text-muted-foreground">{unit}</span>
           </div>

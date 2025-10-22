@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
-import { useCurrency, EXCHANGE_RATES } from "@/contexts/CurrencyContext";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,8 +46,8 @@ const TECHNICAL_INDICATORS = [
 
 const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
-  const { currency, setCurrency } = useCurrency();
-  const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
+  const [location, setLocation] = useState<string>("Mumbai");
+  const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices(location);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -58,7 +57,7 @@ const Index = () => {
   };
 
   const selectedMetalData = metals.find(m => m.metal === selectedMetal);
-  const predictionData = generatePredictionData(selectedMetalData?.price || 2000);
+  const predictionData = generatePredictionData(selectedMetalData?.pricePerGram || 5000);
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,22 +75,23 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue />
+            <div className="flex items-center gap-3 flex-wrap">
+              <Select value={location} onValueChange={setLocation}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Select city" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(EXCHANGE_RATES).map((curr) => (
-                    <SelectItem key={curr} value={curr}>
-                      {curr}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="Mumbai">Mumbai</SelectItem>
+                  <SelectItem value="Delhi">Delhi</SelectItem>
+                  <SelectItem value="Bangalore">Bangalore</SelectItem>
+                  <SelectItem value="Kolkata">Kolkata</SelectItem>
+                  <SelectItem value="Chennai">Chennai</SelectItem>
+                  <SelectItem value="Hyderabad">Hyderabad</SelectItem>
                 </SelectContent>
               </Select>
               <Badge variant="outline" className="flex items-center gap-2">
                 <Activity className="w-3 h-3 text-success animate-pulse" />
-                <span className="text-xs">Live Market Data</span>
+                <span className="text-xs">Live Market Data - INR</span>
               </Badge>
               <Button 
                 variant="outline" 

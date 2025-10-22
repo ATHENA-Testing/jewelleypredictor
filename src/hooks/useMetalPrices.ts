@@ -5,11 +5,13 @@ export interface MetalData {
   metal: string;
   symbol: string;
   price: number;
+  pricePerGram: number;
   change: number;
   changePercent: number;
   unit: string;
   colorClass: string;
   timestamp?: number;
+  location?: string;
 }
 
 const METAL_COLOR_CLASSES: Record<string, string> = {
@@ -19,7 +21,7 @@ const METAL_COLOR_CLASSES: Record<string, string> = {
   Palladium: "border-palladium/50 hover:border-palladium",
 };
 
-export const useMetalPrices = () => {
+export const useMetalPrices = (location?: string) => {
   const [metals, setMetals] = useState<MetalData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,9 @@ export const useMetalPrices = () => {
   const fetchPrices = async () => {
     try {
       setError(null);
-      const { data, error: functionError } = await supabase.functions.invoke('fetch-metal-prices');
+      const { data, error: functionError } = await supabase.functions.invoke('fetch-metal-prices', {
+        body: { location }
+      });
 
       if (functionError) throw functionError;
 
@@ -42,7 +46,7 @@ export const useMetalPrices = () => {
       }
 
       if (data?.usingFallback) {
-        setError("Using cached prices - live data temporarily unavailable");
+        setError("Using approximate prices - live data temporarily unavailable");
       }
     } catch (err) {
       console.error('Error fetching metal prices:', err);
@@ -55,11 +59,11 @@ export const useMetalPrices = () => {
   useEffect(() => {
     fetchPrices();
 
-    // Refresh prices every 30 seconds
-    const interval = setInterval(fetchPrices, 30000);
+    // Refresh prices every 5 minutes (API has limited free tier)
+    const interval = setInterval(fetchPrices, 300000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [location]);
 
   return { metals, isLoading, error, lastUpdate, refetch: fetchPrices };
 };
