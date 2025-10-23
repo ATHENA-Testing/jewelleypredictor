@@ -8,7 +8,6 @@ import { MarketNews } from "@/components/Dashboard/MarketNews";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -46,8 +45,7 @@ const TECHNICAL_INDICATORS = [
 
 const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
-  const [location, setLocation] = useState<string>("Mumbai");
-  const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices(location);
+  const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -76,22 +74,9 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-3 flex-wrap">
-              <Select value={location} onValueChange={setLocation}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Select city" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Mumbai">Mumbai</SelectItem>
-                  <SelectItem value="Delhi">Delhi</SelectItem>
-                  <SelectItem value="Bangalore">Bangalore</SelectItem>
-                  <SelectItem value="Kolkata">Kolkata</SelectItem>
-                  <SelectItem value="Chennai">Chennai</SelectItem>
-                  <SelectItem value="Hyderabad">Hyderabad</SelectItem>
-                </SelectContent>
-              </Select>
               <Badge variant="outline" className="flex items-center gap-2">
                 <Activity className="w-3 h-3 text-success animate-pulse" />
-                <span className="text-xs">Live Market Data - INR</span>
+                <span className="text-xs">All India Rates - INR per gram</span>
               </Badge>
               <Button 
                 variant="outline" 

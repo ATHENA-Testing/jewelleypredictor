@@ -21,7 +21,7 @@ const METAL_COLOR_CLASSES: Record<string, string> = {
   Palladium: "border-palladium/50 hover:border-palladium",
 };
 
-export const useMetalPrices = (location?: string) => {
+export const useMetalPrices = () => {
   const [metals, setMetals] = useState<MetalData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export const useMetalPrices = (location?: string) => {
     try {
       setError(null);
       const { data, error: functionError } = await supabase.functions.invoke('fetch-metal-prices', {
-        body: { location }
+        body: {}
       });
 
       if (functionError) throw functionError;
@@ -43,10 +43,6 @@ export const useMetalPrices = (location?: string) => {
         }));
         setMetals(metalsWithColors);
         setLastUpdate(new Date());
-      }
-
-      if (data?.usingFallback) {
-        setError("Using approximate prices - live data temporarily unavailable");
       }
     } catch (err) {
       console.error('Error fetching metal prices:', err);
@@ -63,7 +59,7 @@ export const useMetalPrices = (location?: string) => {
     const interval = setInterval(fetchPrices, 300000);
 
     return () => clearInterval(interval);
-  }, [location]);
+  }, []);
 
   return { metals, isLoading, error, lastUpdate, refetch: fetchPrices };
 };
