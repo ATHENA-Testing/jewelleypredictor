@@ -1,0 +1,173 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { metal } = await req.json();
+    
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Fetch historical data for the metal (last 30 days)
+    const { data: historicalData, error: historyError } = await supabaseClient
+      .from('metal_prices_history')
+      .select('*')
+      .eq('metal', metal)
+      .gte('recorded_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .order('recorded_at', { ascending: true });
+
+    if (historyError) throw historyError;
+
+    if (!historicalData || historicalData.length < 7) {
+      return new Response(
+        JSON.stringify({ error: 'Insufficient historical data for predictions' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    // Prepare data for AI analysis
+    const priceData = historicalData.map(d => ({
+      date: d.recorded_at,
+      price: d.price_per_gram,
+      change: d.change_percent
+    }));
+
+    const currentPrice = priceData[priceData.length - 1].price;
+    const avgChange = priceData.reduce((sum, d) => sum + (d.change || 0), 0) / priceData.length;
+    const volatility = Math.sqrt(
+      priceData.reduce((sum, d) => sum + Math.pow((d.change || 0) - avgChange, 2), 0) / priceData.length
+    );
+
+    // Call Lovable AI for prediction analysis
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert precious metals market analyst specializing in ${metal}. Analyze historical price data and provide accurate predictions with reasoning based on market trends, technical indicators, and economic factors.`
+          },
+          {
+            role: 'user',
+            content: `Analyze this ${metal} price data and predict the next 10 days:
+
+Historical Data (last ${priceData.length} days):
+${JSON.stringify(priceData.slice(-14), null, 2)}
+
+Current Price: ₹${currentPrice} per gram
+Average Daily Change: ${avgChange.toFixed(2)}%
+Volatility: ${volatility.toFixed(2)}%
+
+Provide:
+1. Daily price predictions for the next 10 days with confidence intervals
+2. Confidence score (0-100)
+3. Detailed reasoning explaining your predictions
+4. Key factors influencing the market
+5. Risk assessment
+
+Format your response as JSON:
+{
+  "predictions": [
+    {"day": 1, "price": number, "confidence_high": number, "confidence_low": number}
+  ],
+  "confidence_score": number,
+  "reasoning": "detailed explanation",
+  "key_factors": ["factor1", "factor2"],
+  "sentiment": "bullish/bearish/neutral",
+  "sources": ["source1", "source2"]
+}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI API Error:', errorText);
+      throw new Error(`AI API error: ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const content = aiData.choices[0].message.content;
+    
+    // Parse JSON from AI response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Failed to parse AI response');
+    
+    const analysis = JSON.parse(jsonMatch[0]);
+
+    // Store predictions in database
+    const predictionInserts = analysis.predictions.map((pred: any, index: number) => {
+      const predictionDate = new Date();
+      predictionDate.setDate(predictionDate.getDate() + index + 1);
+      
+      return {
+        metal,
+        prediction_date: predictionDate.toISOString().split('T')[0],
+        predicted_price: pred.price,
+        confidence_score: analysis.confidence_score,
+        reasoning: analysis.reasoning,
+        sources: analysis.sources,
+        confidence_high: pred.confidence_high,
+        confidence_low: pred.confidence_low
+      };
+    });
+
+    const { error: insertError } = await supabaseClient
+      .from('metal_predictions')
+      .upsert(predictionInserts, { onConflict: 'metal,prediction_date' });
+
+    if (insertError) {
+      console.error('Error inserting predictions:', insertError);
+    }
+
+    // Store market analysis
+    await supabaseClient
+      .from('market_analysis')
+      .insert({
+        metal,
+        analysis_type: 'prediction',
+        analysis_text: analysis.reasoning,
+        sentiment: analysis.sentiment,
+        key_factors: analysis.key_factors,
+        sources: analysis.sources
+      });
+
+    return new Response(
+      JSON.stringify({
+        predictions: analysis.predictions,
+        confidence_score: analysis.confidence_score,
+        reasoning: analysis.reasoning,
+        key_factors: analysis.key_factors,
+        sentiment: analysis.sentiment,
+        sources: analysis.sources
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error generating predictions:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Failed to generate predictions' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
+  }
+});

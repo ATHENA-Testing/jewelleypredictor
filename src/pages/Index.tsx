@@ -10,30 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
+import { usePredictions } from "@/hooks/usePredictions";
+import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
+import { PredictionAnalysis } from "@/components/Dashboard/PredictionAnalysis";
+import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Mock data generators
-const generatePredictionData = (basePrice: number) => {
-  const data = [];
-  let currentPrice = basePrice;
-  
-  for (let i = 0; i < 10; i++) {
-    const change = (Math.random() - 0.5) * 50;
-    currentPrice += change;
-    const confidence = Math.random() * 30 + 10;
-    
-    data.push({
-      date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      actual: i < 3 ? currentPrice : null,
-      predicted: currentPrice,
-      confidence_high: currentPrice + confidence,
-      confidence_low: currentPrice - confidence,
-    });
-  }
-  
-  return data;
-};
 
 
 const TECHNICAL_INDICATORS = [
@@ -46,6 +28,8 @@ const TECHNICAL_INDICATORS = [
 const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
+  const { predictions, analysis: predictionAnalysis, isLoading: predictionLoading } = usePredictions(selectedMetal);
+  const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -53,9 +37,6 @@ const Index = () => {
     await refetch();
     setTimeout(() => setIsRefreshing(false), 500);
   };
-
-  const selectedMetalData = metals.find(m => m.metal === selectedMetal);
-  const predictionData = generatePredictionData(selectedMetalData?.pricePerGram || 5000);
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,12 +111,21 @@ const Index = () => {
 
           <TabsContent value="predictions" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <PredictionChart data={predictionData} metal={selectedMetal} />
+              <div className="lg:col-span-2 space-y-6">
+                {predictionLoading ? (
+                  <Skeleton className="h-[400px] rounded-lg" />
+                ) : (
+                  <PredictionChart data={predictions} metal={selectedMetal} />
+                )}
+                <PredictionAnalysis analysis={predictionAnalysis} isLoading={predictionLoading} />
               </div>
               <div className="space-y-6">
+                <MarketAnalysisCard 
+                  analysis={marketAnalysis} 
+                  isLoading={marketLoading}
+                  onRefresh={refetchMarketAnalysis}
+                />
                 <CurrencyConverter />
-                <MarketNews />
               </div>
             </div>
           </TabsContent>
@@ -143,7 +133,11 @@ const Index = () => {
           <TabsContent value="technical" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TechnicalIndicators metal={selectedMetal} indicators={TECHNICAL_INDICATORS} />
-              <MarketNews />
+              <MarketAnalysisCard 
+                analysis={marketAnalysis} 
+                isLoading={marketLoading}
+                onRefresh={refetchMarketAnalysis}
+              />
             </div>
           </TabsContent>
 

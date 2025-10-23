@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -148,6 +149,35 @@ serve(async (req) => {
     ];
 
     console.log("Processed metal prices:", JSON.stringify(metals));
+
+    // Store historical price data
+    try {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
+      const historyRecords = metals.map(metal => ({
+        metal: metal.metal,
+        price_per_gram: metal.pricePerGram,
+        price_per_troy_oz: metal.price,
+        change_percent: metal.changePercent,
+        recorded_at: new Date().toISOString()
+      }));
+
+      const { error: historyError } = await supabaseClient
+        .from('metal_prices_history')
+        .insert(historyRecords);
+
+      if (historyError) {
+        console.error('Error storing historical data:', historyError);
+      } else {
+        console.log('Historical data stored successfully');
+      }
+    } catch (storageError) {
+      console.error('Error accessing database:', storageError);
+      // Don't fail the request if storage fails
+    }
 
     return new Response(JSON.stringify({ 
       metals, 

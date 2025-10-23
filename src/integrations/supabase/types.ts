@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      market_analysis: {
+        Row: {
+          analysis_text: string
+          analysis_type: string
+          created_at: string
+          id: string
+          key_factors: Json | null
+          metal: string
+          sentiment: string | null
+          sources: Json | null
+        }
+        Insert: {
+          analysis_text: string
+          analysis_type: string
+          created_at?: string
+          id?: string
+          key_factors?: Json | null
+          metal: string
+          sentiment?: string | null
+          sources?: Json | null
+        }
+        Update: {
+          analysis_text?: string
+          analysis_type?: string
+          created_at?: string
+          id?: string
+          key_factors?: Json | null
+          metal?: string
+          sentiment?: string | null
+          sources?: Json | null
+        }
+        Relationships: []
+      }
+      metal_predictions: {
+        Row: {
+          confidence_high: number
+          confidence_low: number
+          confidence_score: number
+          created_at: string
+          id: string
+          metal: string
+          predicted_price: number
+          prediction_date: string
+          reasoning: string
+          sources: Json | null
+        }
+        Insert: {
+          confidence_high: number
+          confidence_low: number
+          confidence_score: number
+          created_at?: string
+          id?: string
+          metal: string
+          predicted_price: number
+          prediction_date: string
+          reasoning: string
+          sources?: Json | null
+        }
+        Update: {
+          confidence_high?: number
+          confidence_low?: number
+          confidence_score?: number
+          created_at?: string
+          id?: string
+          metal?: string
+          predicted_price?: number
+          prediction_date?: string
+          reasoning?: string
+          sources?: Json | null
+        }
+        Relationships: []
+      }
+      metal_prices_history: {
+        Row: {
+          change_percent: number | null
+          created_at: string
+          id: string
+          metal: string
+          price_per_gram: number
+          price_per_troy_oz: number
+          recorded_at: string
+        }
+        Insert: {
+          change_percent?: number | null
+          created_at?: string
+          id?: string
+          metal: string
+          price_per_gram: number
+          price_per_troy_oz: number
+          recorded_at?: string
+        }
+        Update: {
+          change_percent?: number | null
+          created_at?: string
+          id?: string
+          metal?: string
+          price_per_gram?: number
+          price_per_troy_oz?: number
+          recorded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
