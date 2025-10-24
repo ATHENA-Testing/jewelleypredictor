@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
-import { PredictionChart } from "@/components/Dashboard/PredictionChart";
+import { PredictionChartContainer } from "@/components/Dashboard/PredictionChartContainer";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
 import { CurrencyConverter } from "@/components/Dashboard/CurrencyConverter";
-import { MarketNews } from "@/components/Dashboard/MarketNews";
+import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
+import { CityRates } from "@/components/Dashboard/CityRates";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
-import { usePredictions } from "@/hooks/usePredictions";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
-import { PredictionAnalysis } from "@/components/Dashboard/PredictionAnalysis";
+import { useAIRecommendations } from "@/hooks/useAIRecommendations";
 import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,8 +28,8 @@ const TECHNICAL_INDICATORS = [
 const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
-  const { predictions, analysis: predictionAnalysis, isLoading: predictionLoading } = usePredictions(selectedMetal);
   const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
+  const { recommendations, isLoading: recsLoading } = useAIRecommendations();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -100,6 +100,29 @@ const Index = () => {
           )}
         </div>
 
+        {/* AI Recommendations - Flash Scrolling Section */}
+        <div className="mb-8">
+          {recsLoading ? (
+            <Skeleton className="h-64 rounded-lg" />
+          ) : (
+            <AIRecommendations recommendations={recommendations} />
+          )}
+        </div>
+
+        {/* City Rates Section */}
+        <div className="mb-8">
+          {isLoading ? (
+            <Skeleton className="h-64 rounded-lg" />
+          ) : metals.length > 0 ? (
+            <CityRates 
+              metal={selectedMetal}
+              basePrice={metals.find(m => m.metal === selectedMetal)?.pricePerGram || 0}
+              change={metals.find(m => m.metal === selectedMetal)?.change || 0}
+              changePercent={metals.find(m => m.metal === selectedMetal)?.changePercent || 0}
+            />
+          ) : null}
+        </div>
+
         {/* Main Content Tabs */}
         <Tabs defaultValue="predictions" className="space-y-6">
           <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 bg-card border border-border">
@@ -112,12 +135,7 @@ const Index = () => {
           <TabsContent value="predictions" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                {predictionLoading ? (
-                  <Skeleton className="h-[400px] rounded-lg" />
-                ) : (
-                  <PredictionChart data={predictions} metal={selectedMetal} />
-                )}
-                <PredictionAnalysis analysis={predictionAnalysis} isLoading={predictionLoading} />
+                <PredictionChartContainer />
               </div>
               <div className="space-y-6">
                 <MarketAnalysisCard 
