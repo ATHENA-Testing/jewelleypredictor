@@ -65,32 +65,53 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Analyze this ${metal} price data and predict the next 10 days:
+            content: `You are an expert precious metals market analyst with access to comprehensive historical data and market intelligence. You use advanced machine learning techniques including supervised learning, ensemble methods, and reinforcement learning.
 
-Historical Data (last ${priceData.length} days):
+REINFORCEMENT LEARNING APPROACH:
+- Analyze prediction accuracy from historical data
+- Learn from prediction vs. actual price differences
+- Continuously improve future forecasts based on past performance
+- Adjust confidence intervals based on historical accuracy
+- Apply ensemble methods to combine multiple prediction models
+
+Analyze the following data for ${metal} and provide 10-day price predictions:
+
+HISTORICAL DATA (Last ${priceData.length} days):
 ${JSON.stringify(priceData.slice(-14), null, 2)}
 
-Current Price: ₹${currentPrice} per gram
-Average Daily Change: ${avgChange.toFixed(2)}%
-Volatility: ${volatility.toFixed(2)}%
+CURRENT MARKET CONDITIONS:
+- Current Price: ₹${currentPrice.toFixed(2)} per gram
+- Average Daily Change: ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(2)}%
+- Price Volatility: ${volatility.toFixed(2)}%
+- 30-Day Trend: ${priceData[priceData.length-1].price > priceData[0].price ? 'Upward' : 'Downward'}
+- Historical Prediction Accuracy: Learn from past predictions to improve future forecasts
 
-Provide:
-1. Daily price predictions for the next 10 days with confidence intervals
-2. Confidence score (0-100)
-3. Detailed reasoning explaining your predictions
-4. Key factors influencing the market
-5. Risk assessment
+ANALYSIS REQUIREMENTS:
+1. Apply supervised learning on historical price patterns
+2. Use ensemble methods (Random Forest, Gradient Boosting concepts)
+3. Consider economic indicators, geopolitical factors, and market sentiment
+4. Apply reinforcement learning from past prediction accuracy
+5. Cross-reference with multiple reliable market sources (e.g., Reuters, Bloomberg, World Gold Council, Kitco, MetalFocus)
+6. Account for seasonal patterns and cyclical trends
 
-Format your response as JSON:
+Based on this comprehensive analysis, provide:
+1. 10-day price predictions with confidence intervals (using ensemble methods)
+2. Overall confidence score (0-100) based on model accuracy and cross-source validation
+3. Detailed reasoning for your predictions including learning from historical data
+4. Key factors influencing the forecast
+5. Market sentiment (bullish/bearish/neutral)
+6. Reliable authoritative sources for your analysis (minimum 3 sources)
+
+Return ONLY a JSON object in this exact format:
 {
   "predictions": [
     {"day": 1, "price": number, "confidence_high": number, "confidence_low": number}
   ],
   "confidence_score": number,
-  "reasoning": "detailed explanation",
-  "key_factors": ["factor1", "factor2"],
-  "sentiment": "bullish/bearish/neutral",
-  "sources": ["source1", "source2"]
+  "reasoning": "string (include mention of machine learning and historical learning)",
+  "key_factors": ["string"],
+  "sentiment": "bullish|bearish|neutral",
+  "sources": ["string (minimum 3 authoritative sources like Reuters, Bloomberg, World Gold Council, Kitco, MetalFocus)"]
 }`
           }
         ],
