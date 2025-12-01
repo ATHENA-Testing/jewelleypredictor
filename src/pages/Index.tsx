@@ -3,7 +3,8 @@ import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
 import { PredictionChartContainer } from "@/components/Dashboard/PredictionChartContainer";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
-import { CurrencyConverter } from "@/components/Dashboard/CurrencyConverter";
+import { MarketNews } from "@/components/Dashboard/MarketNews";
+import { YearlyPrediction } from "@/components/Dashboard/YearlyPrediction";
 import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
 import { CityRates } from "@/components/Dashboard/CityRates";
 import { Button } from "@/components/ui/button";
@@ -109,6 +110,16 @@ const Index = () => {
           )}
         </div>
 
+        {/* Market News Section */}
+        <div className="mb-8">
+          <MarketNews />
+        </div>
+
+        {/* 365-Day Prediction Section */}
+        <div className="mb-8">
+          <YearlyPrediction />
+        </div>
+
         {/* City Rates Section */}
         <div className="mb-8">
           {isLoading ? (
@@ -143,7 +154,6 @@ const Index = () => {
                   isLoading={marketLoading}
                   onRefresh={refetchMarketAnalysis}
                 />
-                <CurrencyConverter />
               </div>
             </div>
           </TabsContent>
@@ -164,7 +174,13 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="tools" className="space-y-6">
-            <CurrencyConverter />
+            <div className="grid grid-cols-1 gap-6">
+              <MarketAnalysisCard 
+                analysis={marketAnalysis} 
+                isLoading={marketLoading}
+                onRefresh={refetchMarketAnalysis}
+              />
+            </div>
           </TabsContent>
         </Tabs>
 

@@ -6,6 +6,25 @@
 All colors MUST be HSL.
 */
 
+@layer utilities {
+  @keyframes scroll-news {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  .animate-scroll-news {
+    animation: scroll-news 40s linear infinite;
+  }
+  
+  .animate-scroll-news:hover {
+    animation-play-state: paused;
+  }
+}
+
 @layer base {
   :root {
     --background: 222 47% 11%;
