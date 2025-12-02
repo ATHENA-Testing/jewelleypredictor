@@ -24,7 +24,7 @@ interface CurrencyContextType {
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("INR");
 
   const convertPrice = (priceInUSD: number) => {
     return priceInUSD * EXCHANGE_RATES[currency];

@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
-import { PredictionChartContainer } from "@/components/Dashboard/PredictionChartContainer";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
 import { MarketNews } from "@/components/Dashboard/MarketNews";
 import { YearlyPrediction } from "@/components/Dashboard/YearlyPrediction";
 import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
-import { CityRates } from "@/components/Dashboard/CityRates";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Sparkles, RefreshCw, Activity, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
 import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Header } from "@/components/Header";
 
 
 const TECHNICAL_INDICATORS = [
@@ -41,41 +38,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-primary rounded-lg">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">MetalPredict Pro</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Jewellery Rate Predictions</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 flex-wrap">
-              <Badge variant="outline" className="flex items-center gap-2">
-                <Activity className="w-3 h-3 text-success animate-pulse" />
-                <span className="text-xs">All India Rates - INR per gram</span>
-              </Badge>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                Updated {lastUpdate.toLocaleTimeString()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header 
+        lastUpdate={lastUpdate}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+      />
 
       <main className="container mx-auto px-4 py-8">
         {/* Error Alert */}
@@ -124,28 +91,12 @@ const Index = () => {
 
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="predictions" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-4 bg-card border border-border">
-            <TabsTrigger value="predictions">Predictions</TabsTrigger>
+        <Tabs defaultValue="technical" className="space-y-6">
+          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 bg-card border border-border">
             <TabsTrigger value="technical">Technical</TabsTrigger>
             <TabsTrigger value="alerts">Alerts</TabsTrigger>
             <TabsTrigger value="tools">Tools</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="predictions" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <PredictionChartContainer />
-              </div>
-              <div className="space-y-6">
-                <MarketAnalysisCard 
-                  analysis={marketAnalysis} 
-                  isLoading={marketLoading}
-                  onRefresh={refetchMarketAnalysis}
-                />
-              </div>
-            </div>
-          </TabsContent>
 
           <TabsContent value="technical" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
