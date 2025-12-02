@@ -21,7 +21,7 @@ export const useAIRecommendations = () => {
       setIsLoading(true);
 
       // Fetch latest predictions and analysis for all metals
-      const metals = ['Gold', 'Silver', 'Platinum', 'Palladium'];
+      const metals = ['Gold 24K', 'Gold 22K', 'Silver', 'Platinum', 'Palladium'];
       const recs: Recommendation[] = [];
 
       for (const metal of metals) {

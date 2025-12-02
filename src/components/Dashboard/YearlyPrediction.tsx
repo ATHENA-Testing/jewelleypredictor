@@ -8,15 +8,16 @@ import { TrendingUp, Calendar } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { usePredictions } from "@/hooks/usePredictions";
 
-const METALS = ["Gold", "Silver", "Platinum", "Palladium"];
+const METALS = ["Gold 24K", "Gold 22K", "Silver", "Platinum", "Palladium"];
 
 export const YearlyPrediction = () => {
-  const [selectedMetal, setSelectedMetal] = useState("Gold");
+  const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
   const { convertPrice, formatPrice, currency } = useCurrency();
   const { predictions, analysis, isLoading } = usePredictions(selectedMetal);
 
   const metalColors: Record<string, string> = {
-    Gold: "#F59E0B",
+    "Gold 24K": "#F59E0B",
+    "Gold 22K": "#D97706",
     Silver: "#94A3B8",
     Platinum: "#E5E7EB",
     Palladium: "#A78BFA",
