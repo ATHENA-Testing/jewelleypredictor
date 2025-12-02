@@ -89,29 +89,17 @@ serve(async (req) => {
       usingFallback = true;
     }
 
-    // Add small realistic fluctuations
-    const addFluctuation = (price: number) => {
-      const fluctuation = (Math.random() - 0.5) * (price * 0.002); // ±0.2% variation
-      return price + fluctuation;
-    };
-
-    // Calculate realistic daily changes
-    const calculateChange = (pricePerGram: number) => {
-      const changePercent = (Math.random() - 0.5) * 1.5; // -0.75% to +0.75%
-      const change = (pricePerGram * changePercent) / 100;
-      return { change, changePercent };
-    };
-
     const timestamp = Date.now();
     
-    // Build metals array with per gram prices
+    // Build metals array with exact per gram prices from live data (no random fluctuations)
     const metals: MetalPrice[] = [
       {
         metal: "Gold",
         symbol: "XAU/INR",
-        price: addFluctuation(pricesPerTroyOz.XAU),
-        pricePerGram: addFluctuation(pricesPerTroyOz.XAU / TROY_OZ_TO_GRAMS),
-        ...calculateChange(pricesPerTroyOz.XAU / TROY_OZ_TO_GRAMS),
+        price: pricesPerTroyOz.XAU,
+        pricePerGram: pricesPerTroyOz.XAU / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -119,9 +107,10 @@ serve(async (req) => {
       {
         metal: "Silver",
         symbol: "XAG/INR",
-        price: addFluctuation(pricesPerTroyOz.XAG),
-        pricePerGram: addFluctuation(pricesPerTroyOz.XAG / TROY_OZ_TO_GRAMS),
-        ...calculateChange(pricesPerTroyOz.XAG / TROY_OZ_TO_GRAMS),
+        price: pricesPerTroyOz.XAG,
+        pricePerGram: pricesPerTroyOz.XAG / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -129,9 +118,10 @@ serve(async (req) => {
       {
         metal: "Platinum",
         symbol: "XPT/INR",
-        price: addFluctuation(pricesPerTroyOz.XPT),
-        pricePerGram: addFluctuation(pricesPerTroyOz.XPT / TROY_OZ_TO_GRAMS),
-        ...calculateChange(pricesPerTroyOz.XPT / TROY_OZ_TO_GRAMS),
+        price: pricesPerTroyOz.XPT,
+        pricePerGram: pricesPerTroyOz.XPT / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -139,9 +129,10 @@ serve(async (req) => {
       {
         metal: "Palladium",
         symbol: "XPD/INR",
-        price: addFluctuation(pricesPerTroyOz.XPD),
-        pricePerGram: addFluctuation(pricesPerTroyOz.XPD / TROY_OZ_TO_GRAMS),
-        ...calculateChange(pricesPerTroyOz.XPD / TROY_OZ_TO_GRAMS),
+        price: pricesPerTroyOz.XPD,
+        pricePerGram: pricesPerTroyOz.XPD / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -197,8 +188,8 @@ serve(async (req) => {
         symbol: "XAU/INR",
         price: FALLBACK_PRICES_INR.XAU,
         pricePerGram: FALLBACK_PRICES_INR.XAU / TROY_OZ_TO_GRAMS,
-        change: (Math.random() - 0.5) * 50,
-        changePercent: (Math.random() - 0.5) * 1,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -208,8 +199,8 @@ serve(async (req) => {
         symbol: "XAG/INR",
         price: FALLBACK_PRICES_INR.XAG,
         pricePerGram: FALLBACK_PRICES_INR.XAG / TROY_OZ_TO_GRAMS,
-        change: (Math.random() - 0.5) * 2,
-        changePercent: (Math.random() - 0.5) * 1,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -219,8 +210,8 @@ serve(async (req) => {
         symbol: "XPT/INR",
         price: FALLBACK_PRICES_INR.XPT,
         pricePerGram: FALLBACK_PRICES_INR.XPT / TROY_OZ_TO_GRAMS,
-        change: (Math.random() - 0.5) * 30,
-        changePercent: (Math.random() - 0.5) * 1,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
@@ -230,8 +221,8 @@ serve(async (req) => {
         symbol: "XPD/INR",
         price: FALLBACK_PRICES_INR.XPD,
         pricePerGram: FALLBACK_PRICES_INR.XPD / TROY_OZ_TO_GRAMS,
-        change: (Math.random() - 0.5) * 40,
-        changePercent: (Math.random() - 0.5) * 1,
+        change: 0,
+        changePercent: 0,
         unit: "per gram",
         timestamp,
         location: 'All India'
