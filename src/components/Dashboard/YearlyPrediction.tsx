@@ -12,7 +12,7 @@ const METALS = ["Gold", "Silver", "Platinum", "Palladium"];
 
 export const YearlyPrediction = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold");
-  const { convertPrice, currency } = useCurrency();
+  const { convertPrice, formatPrice, currency } = useCurrency();
   const { predictions, analysis, isLoading } = usePredictions(selectedMetal);
 
   const metalColors: Record<string, string> = {
@@ -89,11 +89,11 @@ export const YearlyPrediction = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="p-4 bg-background/50 rounded-lg border border-border">
             <p className="text-xs text-muted-foreground mb-1">Current Price</p>
-            <p className="text-2xl font-bold text-foreground">{currentPrice.toFixed(2)} {currency}</p>
+            <p className="text-2xl font-bold text-foreground">{formatPrice(currentPrice)}</p>
           </div>
           <div className="p-4 bg-background/50 rounded-lg border border-border">
             <p className="text-xs text-muted-foreground mb-1">Year-End Forecast</p>
-            <p className="text-2xl font-bold text-primary">{yearEndPrediction.toFixed(2)} {currency}</p>
+            <p className="text-2xl font-bold text-primary">{formatPrice(yearEndPrediction)}</p>
           </div>
           <div className="p-4 bg-background/50 rounded-lg border border-primary/50">
             <p className="text-xs text-muted-foreground mb-1">Expected Change</p>
@@ -136,7 +136,7 @@ export const YearlyPrediction = () => {
                 borderRadius: "8px",
                 color: "hsl(var(--foreground))",
               }}
-              formatter={(value: number) => [`${value.toFixed(2)} ${currency}`, ""]}
+              formatter={(value: number) => [formatPrice(value), ""]}
             />
             <Legend 
               wrapperStyle={{
