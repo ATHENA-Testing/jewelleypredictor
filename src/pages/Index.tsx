@@ -24,7 +24,7 @@ const TECHNICAL_INDICATORS = [
 ];
 
 const Index = () => {
-  const [selectedMetal, setSelectedMetal] = useState("Gold");
+  const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
   const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
   const { recommendations, isLoading: recsLoading } = useAIRecommendations();
@@ -54,9 +54,9 @@ const Index = () => {
         )}
 
         {/* Metal Price Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 5 }).map((_, i) => (
               <Skeleton key={i} className="h-40 rounded-lg" />
             ))
           ) : (
@@ -132,7 +132,7 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Prediction Accuracy</p>
             </div>
             <div>
-              <div className="text-3xl font-bold text-success mb-2">4</div>
+              <div className="text-3xl font-bold text-success mb-2">5</div>
               <p className="text-sm text-muted-foreground">Metals Tracked</p>
             </div>
             <div>

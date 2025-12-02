@@ -15,7 +15,8 @@ interface PredictionChartProps {
 export const PredictionChart = ({ data, metal }: PredictionChartProps) => {
   const { convertPrice, currency } = useCurrency();
   const metalColors: Record<string, string> = {
-    Gold: "#F59E0B",
+    "Gold 24K": "#F59E0B",
+    "Gold 22K": "#D97706",
     Silver: "#94A3B8",
     Platinum: "#E5E7EB",
     Palladium: "#A78BFA",

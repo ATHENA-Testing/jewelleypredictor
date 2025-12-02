@@ -92,12 +92,26 @@ serve(async (req) => {
     const timestamp = Date.now();
     
     // Build metals array with exact per gram prices from live data (no random fluctuations)
+    const goldPrice24K = pricesPerTroyOz.XAU;
+    const goldPrice22K = goldPrice24K * (22 / 24); // 22K is 91.67% of 24K
+    
     const metals: MetalPrice[] = [
       {
-        metal: "Gold",
+        metal: "Gold 24K",
         symbol: "XAU/INR",
-        price: pricesPerTroyOz.XAU,
-        pricePerGram: pricesPerTroyOz.XAU / TROY_OZ_TO_GRAMS,
+        price: goldPrice24K,
+        pricePerGram: goldPrice24K / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
+        unit: "per gram",
+        timestamp,
+        location: 'All India'
+      },
+      {
+        metal: "Gold 22K",
+        symbol: "XAU/INR",
+        price: goldPrice22K,
+        pricePerGram: goldPrice22K / TROY_OZ_TO_GRAMS,
         change: 0,
         changePercent: 0,
         unit: "per gram",
@@ -182,12 +196,26 @@ serve(async (req) => {
     
     // Return fallback data on error
     const timestamp = Date.now();
+    const goldPrice24K = FALLBACK_PRICES_INR.XAU;
+    const goldPrice22K = goldPrice24K * (22 / 24);
+    
     const metals: MetalPrice[] = [
       {
-        metal: "Gold",
+        metal: "Gold 24K",
         symbol: "XAU/INR",
-        price: FALLBACK_PRICES_INR.XAU,
-        pricePerGram: FALLBACK_PRICES_INR.XAU / TROY_OZ_TO_GRAMS,
+        price: goldPrice24K,
+        pricePerGram: goldPrice24K / TROY_OZ_TO_GRAMS,
+        change: 0,
+        changePercent: 0,
+        unit: "per gram",
+        timestamp,
+        location: 'All India'
+      },
+      {
+        metal: "Gold 22K",
+        symbol: "XAU/INR",
+        price: goldPrice22K,
+        pricePerGram: goldPrice22K / TROY_OZ_TO_GRAMS,
         change: 0,
         changePercent: 0,
         unit: "per gram",

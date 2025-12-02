@@ -15,7 +15,8 @@ export interface MetalData {
 }
 
 const METAL_COLOR_CLASSES: Record<string, string> = {
-  Gold: "border-gold/50 hover:border-gold",
+  "Gold 24K": "border-gold/50 hover:border-gold",
+  "Gold 22K": "border-gold/50 hover:border-gold",
   Silver: "border-silver/50 hover:border-silver",
   Platinum: "border-platinum/50 hover:border-platinum",
   Palladium: "border-palladium/50 hover:border-palladium",
