@@ -120,19 +120,8 @@ const Index = () => {
           <YearlyPrediction />
         </div>
 
-        {/* City Rates Section */}
-        <div className="mb-8">
-          {isLoading ? (
-            <Skeleton className="h-64 rounded-lg" />
-          ) : metals.length > 0 ? (
-            <CityRates 
-              metal={selectedMetal}
-              basePrice={metals.find(m => m.metal === selectedMetal)?.pricePerGram || 0}
-              change={metals.find(m => m.metal === selectedMetal)?.change || 0}
-              changePercent={metals.find(m => m.metal === selectedMetal)?.changePercent || 0}
-            />
-          ) : null}
-        </div>
+        {/* City Rates Section temporarily disabled to avoid showing simulated city-wise data */}
+
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="predictions" className="space-y-6">
