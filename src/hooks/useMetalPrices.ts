@@ -20,6 +20,7 @@ const METAL_COLOR_CLASSES: Record<string, string> = {
   Silver: "border-silver/50 hover:border-silver",
   Platinum: "border-platinum/50 hover:border-platinum",
   Palladium: "border-palladium/50 hover:border-palladium",
+  Diamond: "border-primary/50 hover:border-primary",
 };
 
 export const useMetalPrices = () => {

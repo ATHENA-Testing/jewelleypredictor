@@ -1,4 +1,15 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from "recharts";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+const metalColors: Record<string, string> = {
+  "Gold 24K": "#F59E0B",
+  "Gold 22K": "#D97706",
+  Silver: "#94A3B8",
+  Platinum: "#E5E7EB",
+  Palladium: "#A78BFA",
+  Diamond: "#60A5FA",
+};
 import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface PredictionChartProps {

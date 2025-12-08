@@ -5,11 +5,14 @@ import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
 import { MarketNews } from "@/components/Dashboard/MarketNews";
 import { YearlyPrediction } from "@/components/Dashboard/YearlyPrediction";
 import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
+import { CityRatesTable } from "@/components/Dashboard/CityRatesTable";
+import { BuySellTimingSuggestions } from "@/components/Dashboard/BuySellTimingSuggestions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
+import { useBuySellSuggestions } from "@/hooks/useBuySellSuggestions";
 import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +31,7 @@ const Index = () => {
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
   const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
   const { recommendations, isLoading: recsLoading } = useAIRecommendations();
+  const { suggestions, isLoading: suggestionsLoading } = useBuySellSuggestions();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
@@ -35,6 +39,12 @@ const Index = () => {
     await refetch();
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  // Create base prices map for city rates table
+  const basePrices: Record<string, number> = {};
+  metals.forEach(metal => {
+    basePrices[metal.metal] = metal.pricePerGram;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,6 +55,11 @@ const Index = () => {
       />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Market News Section - Moved to top with faster scroll */}
+        <div className="mb-8">
+          <MarketNews />
+        </div>
+
         {/* Error Alert */}
         {error && (
           <Alert variant="destructive" className="mb-6">
@@ -53,10 +68,10 @@ const Index = () => {
           </Alert>
         )}
 
-        {/* Metal Price Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {/* Metal Price Cards - Now 6 cards including Diamond */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           {isLoading ? (
-            Array.from({ length: 5 }).map((_, i) => (
+            Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-40 rounded-lg" />
             ))
           ) : (
@@ -77,9 +92,9 @@ const Index = () => {
           )}
         </div>
 
-        {/* Market News Section */}
+        {/* AI Buy/Sell Timing Suggestions */}
         <div className="mb-8">
-          <MarketNews />
+          <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
         </div>
 
         {/* 365-Day Prediction Section */}
@@ -87,8 +102,10 @@ const Index = () => {
           <YearlyPrediction />
         </div>
 
-        {/* City Rates Section temporarily disabled to avoid showing simulated city-wise data */}
-
+        {/* City/Region Wise Rates Table */}
+        <div className="mb-8">
+          <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
+        </div>
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="technical" className="space-y-6">
@@ -132,8 +149,8 @@ const Index = () => {
               <p className="text-sm text-muted-foreground">Prediction Accuracy</p>
             </div>
             <div>
-              <div className="text-3xl font-bold text-success mb-2">5</div>
-              <p className="text-sm text-muted-foreground">Metals Tracked</p>
+              <div className="text-3xl font-bold text-success mb-2">6</div>
+              <p className="text-sm text-muted-foreground">Metals & Gems Tracked</p>
             </div>
             <div>
               <div className="text-3xl font-bold text-warning mb-2">24/7</div>
