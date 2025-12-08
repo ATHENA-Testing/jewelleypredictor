@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface MetalPriceCardProps {
   metal: string;
@@ -22,7 +23,9 @@ export const MetalPriceCard = ({
   unit,
   colorClass,
 }: MetalPriceCardProps) => {
+  const { formatPrice } = useCurrency();
   const isPositive = change >= 0;
+  const changePerGram = change / 31.1035;
 
   return (
     <Card className={cn(
@@ -30,7 +33,7 @@ export const MetalPriceCard = ({
       colorClass
     )}>
       <div className="absolute top-0 right-0 w-32 h-32 opacity-10 blur-3xl rounded-full" 
-           style={{ background: `hsl(var(--${metal.toLowerCase()}))` }} />
+           style={{ background: `hsl(var(--${metal.toLowerCase().replace(' ', '-')}))` }} />
       
       <div className="relative p-6">
         <div className="flex justify-between items-start mb-4">
@@ -49,14 +52,14 @@ export const MetalPriceCard = ({
 
         <div className="space-y-2">
           <div className="text-3xl font-bold text-foreground">
-            ₹{pricePerGram.toFixed(2)}
+            {formatPrice(pricePerGram)}
           </div>
           <div className="flex items-baseline gap-2">
             <span className={cn(
               "text-sm font-medium",
               isPositive ? "text-success" : "text-danger"
             )}>
-              {isPositive ? "+" : ""}₹{(change / 31.1035).toFixed(2)}
+              {isPositive ? "+" : ""}{formatPrice(Math.abs(changePerGram))}
             </span>
             <span className="text-xs text-muted-foreground">{unit}</span>
           </div>

@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export const EXCHANGE_RATES: Record<string, number> = {
-  USD: 1,
-  EUR: 0.92,
-  INR: 83.12,
-  GBP: 0.79,
+// Exchange rates FROM INR to other currencies (API returns INR prices)
+export const EXCHANGE_RATES_FROM_INR: Record<string, number> = {
+  INR: 1,
+  USD: 0.01203, // 1 INR = 0.01203 USD
+  EUR: 0.01107, // 1 INR = 0.01107 EUR
+  GBP: 0.00951, // 1 INR = 0.00951 GBP
 };
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -17,8 +18,8 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
 interface CurrencyContextType {
   currency: string;
   setCurrency: (currency: string) => void;
-  convertPrice: (priceInUSD: number) => number;
-  formatPrice: (priceInUSD: number) => string;
+  convertPrice: (priceInINR: number) => number;
+  formatPrice: (priceInINR: number) => string;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -26,12 +27,22 @@ const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined
 export const CurrencyProvider = ({ children }: { children: ReactNode }) => {
   const [currency, setCurrency] = useState("INR");
 
-  const convertPrice = (priceInUSD: number) => {
-    return priceInUSD * EXCHANGE_RATES[currency];
+  // Convert from INR (base currency from API) to selected currency
+  const convertPrice = (priceInINR: number) => {
+    return priceInINR * EXCHANGE_RATES_FROM_INR[currency];
   };
 
-  const formatPrice = (priceInUSD: number) => {
-    const converted = convertPrice(priceInUSD);
+  const formatPrice = (priceInINR: number) => {
+    const converted = convertPrice(priceInINR);
+    
+    // Use Indian number formatting for INR
+    if (currency === "INR") {
+      return `${CURRENCY_SYMBOLS[currency]}${converted.toLocaleString('en-IN', { 
+        minimumFractionDigits: 2, 
+        maximumFractionDigits: 2 
+      })}`;
+    }
+    
     return `${CURRENCY_SYMBOLS[currency]}${converted.toLocaleString('en-US', { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 2 
