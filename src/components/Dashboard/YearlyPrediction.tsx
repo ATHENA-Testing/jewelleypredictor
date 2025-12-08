@@ -4,14 +4,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Calendar } from "lucide-react";
+import { TrendingUp, Calendar, Scale } from "lucide-react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { usePredictions } from "@/hooks/usePredictions";
 
-const METALS = ["Gold 24K", "Gold 22K", "Silver", "Platinum", "Palladium"];
+const METALS = ["Gold 24K", "Gold 22K", "Silver", "Platinum", "Palladium", "Diamond"];
+const WEIGHT_OPTIONS = [
+  { value: "1g", label: "Per Gram", multiplier: 1 },
+  { value: "10g", label: "Per 10 Grams", multiplier: 10 },
+  { value: "1kg", label: "Per KG", multiplier: 1000 },
+];
 
 export const YearlyPrediction = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
+  const [selectedWeight, setSelectedWeight] = useState("1g");
   const { convertPrice, formatPrice, currency } = useCurrency();
   const { predictions, analysis, isLoading } = usePredictions(selectedMetal);
 
@@ -21,9 +27,11 @@ export const YearlyPrediction = () => {
     Silver: "#94A3B8",
     Platinum: "#E5E7EB",
     Palladium: "#A78BFA",
+    Diamond: "#60A5FA",
   };
 
   const color = metalColors[selectedMetal] || "#3B82F6";
+  const weightMultiplier = WEIGHT_OPTIONS.find(w => w.value === selectedWeight)?.multiplier || 1;
 
   // Generate monthly data points for 365 days (12 months)
   const generateYearlyData = () => {
@@ -37,7 +45,7 @@ export const YearlyPrediction = () => {
       // Simulate gradual price changes with some volatility
       const trend = 1 + (i * 0.015); // 1.5% monthly growth trend
       const volatility = 0.95 + (Math.random() * 0.1); // ±5% volatility
-      const predicted = basePrice * trend * volatility;
+      const predicted = basePrice * trend * volatility * weightMultiplier;
       const confidenceRange = predicted * 0.08; // 8% confidence range
       
       monthlyData.push({
@@ -71,18 +79,33 @@ export const YearlyPrediction = () => {
           </div>
           <p className="text-sm text-muted-foreground">Advanced machine learning predictions for the next year</p>
         </div>
-        <Select value={selectedMetal} onValueChange={setSelectedMetal}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select metal" />
-          </SelectTrigger>
-          <SelectContent>
-            {METALS.map((metal) => (
-              <SelectItem key={metal} value={metal}>
-                {metal}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-3">
+          <Select value={selectedMetal} onValueChange={setSelectedMetal}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Select metal" />
+            </SelectTrigger>
+            <SelectContent>
+              {METALS.map((metal) => (
+                <SelectItem key={metal} value={metal}>
+                  {metal}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedWeight} onValueChange={setSelectedWeight}>
+            <SelectTrigger className="w-[140px]">
+              <Scale className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Select weight" />
+            </SelectTrigger>
+            <SelectContent>
+              {WEIGHT_OPTIONS.map((weight) => (
+                <SelectItem key={weight.value} value={weight.value}>
+                  {weight.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Year-end prediction highlight */}

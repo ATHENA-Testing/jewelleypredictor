@@ -17,7 +17,7 @@ All colors MUST be HSL.
   }
   
   .animate-scroll-news {
-    animation: scroll-news 40s linear infinite;
+    animation: scroll-news 3s linear infinite;
   }
   
   .animate-scroll-news:hover {

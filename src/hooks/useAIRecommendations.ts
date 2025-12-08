@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+const METALS = ['Gold 24K', 'Gold 22K', 'Silver', 'Platinum', 'Palladium', 'Diamond'];
+
 interface Recommendation {
   metal: string;
   action: "BUY" | "SELL" | "HOLD";
@@ -21,10 +23,9 @@ export const useAIRecommendations = () => {
       setIsLoading(true);
 
       // Fetch latest predictions and analysis for all metals
-      const metals = ['Gold 24K', 'Gold 22K', 'Silver', 'Platinum', 'Palladium'];
       const recs: Recommendation[] = [];
 
-      for (const metal of metals) {
+      for (const metal of METALS) {
         // Get latest prediction
         const { data: predictions } = await supabase
           .from('metal_predictions')

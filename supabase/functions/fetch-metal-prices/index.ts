@@ -67,6 +67,10 @@ const FALLBACK_PRICES_INR = {
   XPD: 102700, // ~INR 102,700 per troy oz (~3,302 per gram)
 };
 
+// Diamond price per carat in INR (approximate market rate)
+const DIAMOND_PRICE_PER_CARAT = 45000;
+const CARAT_TO_GRAMS = 0.2; // 1 carat = 0.2 grams
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -94,6 +98,7 @@ serve(async (req) => {
     // Build metals array with exact per gram prices from live data (no random fluctuations)
     const goldPrice24K = pricesPerTroyOz.XAU;
     const goldPrice22K = goldPrice24K * (22 / 24); // 22K is 91.67% of 24K
+    const diamondPricePerGram = DIAMOND_PRICE_PER_CARAT / CARAT_TO_GRAMS; // Price per gram for diamond
     
     const metals: MetalPrice[] = [
       {
@@ -151,6 +156,17 @@ serve(async (req) => {
         timestamp,
         location: 'All India'
       },
+      {
+        metal: "Diamond",
+        symbol: "DIA/INR",
+        price: DIAMOND_PRICE_PER_CARAT,
+        pricePerGram: diamondPricePerGram,
+        change: 0,
+        changePercent: 0,
+        unit: "per carat",
+        timestamp,
+        location: 'All India'
+      },
     ];
 
     console.log("Processed metal prices:", JSON.stringify(metals));
@@ -198,6 +214,7 @@ serve(async (req) => {
     const timestamp = Date.now();
     const goldPrice24K = FALLBACK_PRICES_INR.XAU;
     const goldPrice22K = goldPrice24K * (22 / 24);
+    const diamondPricePerGram = DIAMOND_PRICE_PER_CARAT / CARAT_TO_GRAMS;
     
     const metals: MetalPrice[] = [
       {
@@ -252,6 +269,17 @@ serve(async (req) => {
         change: 0,
         changePercent: 0,
         unit: "per gram",
+        timestamp,
+        location: 'All India'
+      },
+      {
+        metal: "Diamond",
+        symbol: "DIA/INR",
+        price: DIAMOND_PRICE_PER_CARAT,
+        pricePerGram: diamondPricePerGram,
+        change: 0,
+        changePercent: 0,
+        unit: "per carat",
         timestamp,
         location: 'All India'
       }
