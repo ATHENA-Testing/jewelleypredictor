@@ -140,6 +140,45 @@ export type Database = {
         }
         Relationships: []
       }
+      prediction_learnings: {
+        Row: {
+          accuracy_percentage: number | null
+          actual_price: number | null
+          created_at: string
+          id: string
+          learning_notes: string | null
+          match_reasons: string | null
+          metal: string
+          predicted_price: number
+          prediction_date: string
+          updated_at: string
+        }
+        Insert: {
+          accuracy_percentage?: number | null
+          actual_price?: number | null
+          created_at?: string
+          id?: string
+          learning_notes?: string | null
+          match_reasons?: string | null
+          metal: string
+          predicted_price: number
+          prediction_date: string
+          updated_at?: string
+        }
+        Update: {
+          accuracy_percentage?: number | null
+          actual_price?: number | null
+          created_at?: string
+          id?: string
+          learning_notes?: string | null
+          match_reasons?: string | null
+          metal?: string
+          predicted_price?: number
+          prediction_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

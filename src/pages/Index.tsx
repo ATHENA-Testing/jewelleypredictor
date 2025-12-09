@@ -7,6 +7,7 @@ import { YearlyPrediction } from "@/components/Dashboard/YearlyPrediction";
 import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
 import { CityRatesTable } from "@/components/Dashboard/CityRatesTable";
 import { BuySellTimingSuggestions } from "@/components/Dashboard/BuySellTimingSuggestions";
+import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
@@ -105,6 +106,11 @@ const Index = () => {
         {/* City/Region Wise Rates Table */}
         <div className="mb-8">
           <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
+        </div>
+
+        {/* Historical Data Table with Reinforcement Learning */}
+        <div className="mb-8">
+          <HistoricalDataTable />
         </div>
 
         {/* Main Content Tabs */}
