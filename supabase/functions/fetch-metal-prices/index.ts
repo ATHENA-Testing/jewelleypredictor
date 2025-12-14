@@ -22,25 +22,57 @@ interface MetalPrice {
   location: string;
 }
 
-// Indian domestic market prices as of Dec 14, 2025 (Hyderabad rates)
-// These are DOMESTIC prices which include import duty (~15%), GST (3%), and local premiums
-// International API rates need to be adjusted to match Indian domestic prices
-const INDIAN_MARKET_RATES_PER_GRAM = {
-  GOLD_24K: 8350, // Current Hyderabad rate: ₹8,350/gram for 24K gold
-  GOLD_22K: 7655, // 22K is ~91.67% of 24K: ₹7,655/gram
-  SILVER: 105,    // Current rate: ₹105/gram
-  PLATINUM: 3200, // Current rate: ₹3,200/gram
-  PALLADIUM: 3500, // Current rate: ₹3,500/gram
-  DIAMOND: 65000, // ₹65,000 per carat (for 1 carat round brilliant)
-};
+interface ManualRate {
+  metal: string;
+  price_per_gram: number;
+}
 
-// Import duty and tax adjustment factor (international to domestic conversion)
-// India charges ~15% import duty + 3% GST + ~2% local premium on precious metals
-const INDIA_PREMIUM_FACTOR = 1.20; // ~20% premium over international prices
+// Fetch admin-set manual rates from database
+async function fetchManualRates(): Promise<Record<string, number> | null> {
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-async function fetchFromMetalPriceAPI(): Promise<Record<string, number> | null> {
+    const { data, error } = await supabaseClient
+      .from('manual_market_rates')
+      .select('metal, price_per_gram');
+
+    if (error) {
+      console.error('Error fetching manual rates:', error);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      console.log('No manual rates found in database');
+      return null;
+    }
+
+    const rates: Record<string, number> = {};
+    data.forEach((rate: ManualRate) => {
+      if (rate.metal === 'Gold 24K') rates.GOLD_24K = rate.price_per_gram;
+      else if (rate.metal === 'Gold 22K') rates.GOLD_22K = rate.price_per_gram;
+      else if (rate.metal === 'Silver') rates.SILVER = rate.price_per_gram;
+      else if (rate.metal === 'Platinum') rates.PLATINUM = rate.price_per_gram;
+      else if (rate.metal === 'Palladium') rates.PALLADIUM = rate.price_per_gram;
+      else if (rate.metal === 'Diamond') rates.DIAMOND = rate.price_per_gram;
+    });
+
+    console.log('Manual rates from database:', JSON.stringify(rates));
+    return rates;
+  } catch (error) {
+    console.error('Error in fetchManualRates:', error);
+    return null;
+  }
+}
+
+// Import duty and tax adjustment factor
+const INDIA_PREMIUM_FACTOR = 1.20;
+
+async function fetchFromMetalPriceAPI(manualRates: Record<string, number>): Promise<Record<string, number> | null> {
   if (!METALPRICE_API_KEY) {
-    console.log('No API key found, will use Indian market rates');
+    console.log('No API key found, will use manual rates');
     return null;
   }
 
@@ -56,17 +88,15 @@ async function fetchFromMetalPriceAPI(): Promise<Record<string, number> | null> 
     console.log('MetalpriceAPI data:', JSON.stringify(data));
 
     if (!data.success || !data.rates) {
-      console.log('Invalid API response, using Indian market rates');
+      console.log('Invalid API response, using manual rates');
       return null;
     }
 
-    // Convert API rates (troy oz) to per gram with Indian premium
     const xauPerOz = data.rates['INRXAU'] || (1 / data.rates['XAU']);
     const xagPerOz = data.rates['INRXAG'] || (1 / data.rates['XAG']);
     const xptPerOz = data.rates['INRXPT'] || (1 / data.rates['XPT']);
     const xpdPerOz = data.rates['INRXPD'] || (1 / data.rates['XPD']);
 
-    // Convert to per gram and apply Indian market premium
     const rates: Record<string, number> = {
       GOLD_24K: (xauPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
       GOLD_22K: ((xauPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR) * (22/24),
@@ -75,14 +105,14 @@ async function fetchFromMetalPriceAPI(): Promise<Record<string, number> | null> 
       PALLADIUM: (xpdPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
     };
 
-    console.log('Calculated Indian rates from API:', JSON.stringify(rates));
+    console.log('Calculated API rates:', JSON.stringify(rates));
     
-    // Validate rates are reasonable (within 15% of expected Indian market rates)
-    const isGoldValid = Math.abs(rates.GOLD_24K - INDIAN_MARKET_RATES_PER_GRAM.GOLD_24K) / INDIAN_MARKET_RATES_PER_GRAM.GOLD_24K < 0.15;
-    const isSilverValid = Math.abs(rates.SILVER - INDIAN_MARKET_RATES_PER_GRAM.SILVER) / INDIAN_MARKET_RATES_PER_GRAM.SILVER < 0.15;
+    // Validate rates against manual rates (within 15% tolerance)
+    const isGoldValid = Math.abs(rates.GOLD_24K - manualRates.GOLD_24K) / manualRates.GOLD_24K < 0.15;
+    const isSilverValid = Math.abs(rates.SILVER - manualRates.SILVER) / manualRates.SILVER < 0.15;
     
     if (!isGoldValid || !isSilverValid) {
-      console.log('API rates differ significantly from expected Indian market rates, using fallback');
+      console.log('API rates differ significantly from manual rates, using manual rates instead');
       return null;
     }
 
@@ -91,15 +121,6 @@ async function fetchFromMetalPriceAPI(): Promise<Record<string, number> | null> 
     console.error('Error fetching from API:', error);
     return null;
   }
-}
-
-// Fetch latest rates from trusted Indian sources (GoodReturns-style scraping simulation)
-// In production, this should integrate with Indian bullion associations or banks
-async function getIndianMarketRates(): Promise<Record<string, number>> {
-  // These rates should be updated daily or fetched from Indian sources
-  // Current rates as of Dec 14, 2025 for Hyderabad
-  console.log('Using verified Indian market rates');
-  return { ...INDIAN_MARKET_RATES_PER_GRAM };
 }
 
 serve(async (req) => {
@@ -111,13 +132,29 @@ serve(async (req) => {
     await req.json().catch(() => ({}));
     console.log('Fetching metal prices (Indian domestic rates)');
 
-    // Try API first, fall back to Indian market rates if API fails or returns invalid data
-    let ratesPerGram = await fetchFromMetalPriceAPI();
+    // PRIORITY 1: Fetch admin-set manual rates from database
+    const manualRates = await fetchManualRates();
+    
+    if (!manualRates || Object.keys(manualRates).length < 6) {
+      console.error('Manual rates not available or incomplete');
+      return new Response(JSON.stringify({ 
+        success: false,
+        error: 'Manual rates not configured. Admin needs to set rates.'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // PRIORITY 2: Try API but validate against manual rates
+    let ratesPerGram = await fetchFromMetalPriceAPI(manualRates);
     let usingFallback = false;
     
+    // PRIORITY 3: Fall back to manual rates if API fails or returns invalid data
     if (!ratesPerGram) {
-      ratesPerGram = await getIndianMarketRates();
+      ratesPerGram = manualRates;
       usingFallback = true;
+      console.log('Using admin-set manual rates');
     }
 
     const timestamp = Date.now();
@@ -181,8 +218,8 @@ serve(async (req) => {
       {
         metal: "Diamond",
         symbol: "DIA/INR",
-        price: INDIAN_MARKET_RATES_PER_GRAM.DIAMOND,
-        pricePerGram: INDIAN_MARKET_RATES_PER_GRAM.DIAMOND,
+        price: ratesPerGram.DIAMOND,
+        pricePerGram: ratesPerGram.DIAMOND,
         change: 0,
         changePercent: 0,
         unit: "per carat",
@@ -231,85 +268,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in fetch-metal-prices function:', error);
     
-    // Return Indian market fallback data on error
-    const timestamp = Date.now();
-    const rates = INDIAN_MARKET_RATES_PER_GRAM;
-    
-    const metals: MetalPrice[] = [
-      {
-        metal: "Gold 24K",
-        symbol: "XAU/INR",
-        price: rates.GOLD_24K * TROY_OZ_TO_GRAMS,
-        pricePerGram: rates.GOLD_24K,
-        change: 0,
-        changePercent: 0,
-        unit: "per gram",
-        timestamp,
-        location: 'All India'
-      },
-      {
-        metal: "Gold 22K",
-        symbol: "XAU/INR",
-        price: rates.GOLD_22K * TROY_OZ_TO_GRAMS,
-        pricePerGram: rates.GOLD_22K,
-        change: 0,
-        changePercent: 0,
-        unit: "per gram",
-        timestamp,
-        location: 'All India'
-      },
-      {
-        metal: "Silver",
-        symbol: "XAG/INR",
-        price: rates.SILVER * TROY_OZ_TO_GRAMS,
-        pricePerGram: rates.SILVER,
-        change: 0,
-        changePercent: 0,
-        unit: "per gram",
-        timestamp,
-        location: 'All India'
-      },
-      {
-        metal: "Platinum",
-        symbol: "XPT/INR",
-        price: rates.PLATINUM * TROY_OZ_TO_GRAMS,
-        pricePerGram: rates.PLATINUM,
-        change: 0,
-        changePercent: 0,
-        unit: "per gram",
-        timestamp,
-        location: 'All India'
-      },
-      {
-        metal: "Palladium",
-        symbol: "XPD/INR",
-        price: rates.PALLADIUM * TROY_OZ_TO_GRAMS,
-        pricePerGram: rates.PALLADIUM,
-        change: 0,
-        changePercent: 0,
-        unit: "per gram",
-        timestamp,
-        location: 'All India'
-      },
-      {
-        metal: "Diamond",
-        symbol: "DIA/INR",
-        price: rates.DIAMOND,
-        pricePerGram: rates.DIAMOND,
-        change: 0,
-        changePercent: 0,
-        unit: "per carat",
-        timestamp,
-        location: 'All India'
-      }
-    ];
-
     return new Response(JSON.stringify({ 
-      metals, 
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      usingFallback: true 
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
