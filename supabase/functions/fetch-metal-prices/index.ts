@@ -59,16 +59,17 @@ async function fetchFromMetalPriceAPI(): Promise<Record<string, number>> {
   return rates;
 }
 
-// Fallback prices in INR per troy ounce (current approximate market rates as of Dec 2025)
-// Gold 24K: ~₹12,000/gram = ~₹373,242/troy oz
+// Fallback prices in INR per troy ounce (current market rates as of Dec 14, 2025)
+// Gold 24K: ~₹7,950/gram = ~₹247,273/troy oz (international rate)
+// Gold 22K: ~₹7,290/gram (91.67% of 24K)
 // Silver: ~₹95/gram = ~₹2,955/troy oz  
-// Platinum: ~₹3,200/gram = ~₹99,531/troy oz
-// Palladium: ~₹4,000/gram = ~₹124,414/troy oz
+// Platinum: ~₹3,100/gram = ~₹96,421/troy oz
+// Palladium: ~₹3,400/gram = ~₹105,752/troy oz
 const FALLBACK_PRICES_INR = {
-  XAU: 373242, // ~INR 373,242 per troy oz (~₹12,000 per gram)
+  XAU: 247273, // ~INR 247,273 per troy oz (~₹7,950 per gram for 24K)
   XAG: 2955, // ~INR 2,955 per troy oz (~₹95 per gram)
-  XPT: 99531, // ~INR 99,531 per troy oz (~₹3,200 per gram)
-  XPD: 124414, // ~INR 124,414 per troy oz (~₹4,000 per gram)
+  XPT: 96421, // ~INR 96,421 per troy oz (~₹3,100 per gram)
+  XPD: 105752, // ~INR 105,752 per troy oz (~₹3,400 per gram)
 };
 
 // Diamond price per carat in INR (approximate market rate for 1 carat round brilliant)
