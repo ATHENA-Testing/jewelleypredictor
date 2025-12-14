@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_market_rates: {
+        Row: {
+          id: string
+          metal: string
+          notes: string | null
+          price_per_gram: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          metal: string
+          notes?: string | null
+          price_per_gram: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          metal?: string
+          notes?: string | null
+          price_per_gram?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       market_analysis: {
         Row: {
           analysis_text: string

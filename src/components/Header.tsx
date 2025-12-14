@@ -6,12 +6,13 @@ import { useCurrency, CURRENCY_SYMBOLS } from "@/contexts/CurrencyContext";
 import { useCity, INDIAN_CITIES } from "@/contexts/CityContext";
 
 interface HeaderProps {
-  lastUpdate: Date;
-  isRefreshing: boolean;
-  onRefresh: () => void;
+  lastUpdate?: Date;
+  isRefreshing?: boolean;
+  onRefresh?: () => void;
+  showRefresh?: boolean;
 }
 
-export const Header = ({ lastUpdate, isRefreshing, onRefresh }: HeaderProps) => {
+export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefresh = true }: HeaderProps) => {
   const { currency, setCurrency } = useCurrency();
   const { selectedCity, setSelectedCity, getCityLabel } = useCity();
 
@@ -63,18 +64,24 @@ export const Header = ({ lastUpdate, isRefreshing, onRefresh }: HeaderProps) => 
               </SelectContent>
             </Select>
 
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              Updated {lastUpdate.toLocaleTimeString()}
-            </span>
+            {showRefresh && onRefresh && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                {lastUpdate && (
+                  <span className="text-xs text-muted-foreground">
+                    Updated {lastUpdate.toLocaleTimeString()}
+                  </span>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
