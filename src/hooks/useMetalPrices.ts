@@ -24,15 +24,26 @@ const METAL_COLOR_CLASSES: Record<string, string> = {
   Diamond: "border-primary/50 hover:border-primary",
 };
 
-// City-specific price adjustments (percentage difference from All India base rate)
-const CITY_PRICE_ADJUSTMENTS: Record<string, number> = {
-  "all-india": 0,
-  "mumbai": 0.15,
-  "delhi": 0.10,
-  "bangalore": 0.05,
-  "chennai": -0.10,
-  "kolkata": -0.05,
-  "hyderabad": 0,
+// City-specific price adjustments (INR per gram difference from All India base rate)
+// Based on actual Indian jewellery market variations across cities
+const CITY_PRICE_ADJUSTMENTS: Record<string, Record<string, number>> = {
+  "all-india": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "hyderabad": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "mumbai": { GOLD_24K: 50, GOLD_22K: 45, SILVER: 2, PLATINUM: 30, PALLADIUM: 25, DIAMOND: 500 },
+  "delhi": { GOLD_24K: 30, GOLD_22K: 25, SILVER: 1.5, PLATINUM: 20, PALLADIUM: 20, DIAMOND: 300 },
+  "bangalore": { GOLD_24K: 20, GOLD_22K: 18, SILVER: 1, PLATINUM: 15, PALLADIUM: 15, DIAMOND: 200 },
+  "chennai": { GOLD_24K: -30, GOLD_22K: -25, SILVER: -1, PLATINUM: -15, PALLADIUM: -15, DIAMOND: -200 },
+  "kolkata": { GOLD_24K: -20, GOLD_22K: -18, SILVER: -0.5, PLATINUM: -10, PALLADIUM: -10, DIAMOND: -100 },
+};
+
+const getMetalKey = (metalName: string): string => {
+  if (metalName === "Gold 24K") return "GOLD_24K";
+  if (metalName === "Gold 22K") return "GOLD_22K";
+  if (metalName === "Silver") return "SILVER";
+  if (metalName === "Platinum") return "PLATINUM";
+  if (metalName === "Palladium") return "PALLADIUM";
+  if (metalName === "Diamond") return "DIAMOND";
+  return "GOLD_24K";
 };
 
 const CACHE_KEY = 'metal_prices_cache';
@@ -90,15 +101,20 @@ export const useMetalPrices = () => {
   const { selectedCity, getCityLabel } = useCity();
 
   const applyCityAdjustments = useCallback((basePrices: MetalData[], city: string): MetalData[] => {
-    const adjustment = CITY_PRICE_ADJUSTMENTS[city] || 0;
+    const cityAdjustments = CITY_PRICE_ADJUSTMENTS[city] || CITY_PRICE_ADJUSTMENTS["all-india"];
     const cityLabel = getCityLabel(city);
     
-    return basePrices.map(metal => ({
-      ...metal,
-      pricePerGram: metal.pricePerGram * (1 + adjustment / 100),
-      price: metal.price * (1 + adjustment / 100),
-      location: cityLabel,
-    }));
+    return basePrices.map(metal => {
+      const metalKey = getMetalKey(metal.metal);
+      const adjustment = cityAdjustments[metalKey] || 0;
+      
+      return {
+        ...metal,
+        pricePerGram: metal.pricePerGram + adjustment,
+        price: metal.price + (adjustment * 31.1035), // Adjust troy oz price proportionally
+        location: cityLabel,
+      };
+    });
   }, [getCityLabel]);
 
   const fetchPrices = useCallback(async (forceRefresh = false) => {
