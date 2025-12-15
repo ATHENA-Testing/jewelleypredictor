@@ -25,15 +25,16 @@ const METAL_COLOR_CLASSES: Record<string, string> = {
 };
 
 // City-specific price adjustments (INR per gram difference from All India base rate)
-// Based on actual Indian jewellery market variations across cities
+// Based on actual Indian jewellery market variations across cities (Source: GoodReturns.in)
+// Chennai has higher silver rates (~₹12/gram more), Mumbai/Delhi are at base, etc.
 const CITY_PRICE_ADJUSTMENTS: Record<string, Record<string, number>> = {
   "all-india": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
   "hyderabad": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
-  "mumbai": { GOLD_24K: 50, GOLD_22K: 45, SILVER: 2, PLATINUM: 30, PALLADIUM: 25, DIAMOND: 500 },
-  "delhi": { GOLD_24K: 30, GOLD_22K: 25, SILVER: 1.5, PLATINUM: 20, PALLADIUM: 20, DIAMOND: 300 },
-  "bangalore": { GOLD_24K: 20, GOLD_22K: 18, SILVER: 1, PLATINUM: 15, PALLADIUM: 15, DIAMOND: 200 },
-  "chennai": { GOLD_24K: -30, GOLD_22K: -25, SILVER: -1, PLATINUM: -15, PALLADIUM: -15, DIAMOND: -200 },
-  "kolkata": { GOLD_24K: -20, GOLD_22K: -18, SILVER: -0.5, PLATINUM: -10, PALLADIUM: -10, DIAMOND: -100 },
+  "mumbai": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "delhi": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "bangalore": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "chennai": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 12, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
+  "kolkata": { GOLD_24K: 0, GOLD_22K: 0, SILVER: 0, PLATINUM: 0, PALLADIUM: 0, DIAMOND: 0 },
 };
 
 const getMetalKey = (metalName: string): string => {
