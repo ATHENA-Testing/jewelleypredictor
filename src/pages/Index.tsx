@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
@@ -9,7 +9,7 @@ import { CityRatesTable } from "@/components/Dashboard/CityRatesTable";
 import { BuySellTimingSuggestions } from "@/components/Dashboard/BuySellTimingSuggestions";
 import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
@@ -18,7 +18,8 @@ import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/Header";
-
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const TECHNICAL_INDICATORS = [
   { name: "RSI (14)", value: 65.4, signal: "bullish" as const, description: "Momentum indicator suggesting upward pressure" },
@@ -27,18 +28,82 @@ const TECHNICAL_INDICATORS = [
   { name: "Bollinger Bands", value: 78.5, signal: "neutral" as const, description: "Price within normal volatility range" },
 ];
 
+const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
 const Index = () => {
   const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
-  const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
-  const { recommendations, isLoading: recsLoading } = useAIRecommendations();
-  const { suggestions, isLoading: suggestionsLoading } = useBuySellSuggestions();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [nextSyncIn, setNextSyncIn] = useState(AUTO_SYNC_INTERVAL / 1000);
+
+  // Create current prices map from live metal prices
+  const currentPrices: Record<string, number> = {};
+  metals.forEach(metal => {
+    currentPrices[metal.metal] = metal.pricePerGram;
+  });
+
+  // Pass current prices to hooks for consistency
+  const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
+  const { recommendations, isLoading: recsLoading, refetch: refetchRecommendations } = useAIRecommendations(currentPrices);
+  const { suggestions, isLoading: suggestionsLoading, refetch: refetchSuggestions } = useBuySellSuggestions(currentPrices);
+
+  // Sync all data across dashboard
+  const syncAllData = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      // Wait a bit for prices to update, then refresh dependent data
+      setTimeout(async () => {
+        await Promise.all([
+          refetchRecommendations(),
+          refetchSuggestions(),
+          refetchMarketAnalysis()
+        ]);
+        toast.success("All prices synced across dashboard");
+      }, 500);
+    } catch (err) {
+      toast.error("Failed to sync prices");
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 1000);
+    }
+  }, [refetch, refetchRecommendations, refetchSuggestions, refetchMarketAnalysis]);
+
+  // Auto-sync timer
+  useEffect(() => {
+    if (!autoSyncEnabled) return;
+
+    const syncInterval = setInterval(() => {
+      syncAllData();
+      setNextSyncIn(AUTO_SYNC_INTERVAL / 1000);
+    }, AUTO_SYNC_INTERVAL);
+
+    const countdownInterval = setInterval(() => {
+      setNextSyncIn(prev => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => {
+      clearInterval(syncInterval);
+      clearInterval(countdownInterval);
+    };
+  }, [autoSyncEnabled, syncAllData]);
+
+  // Refresh dependent hooks when prices change
+  useEffect(() => {
+    if (Object.keys(currentPrices).length > 0 && !isLoading) {
+      refetchRecommendations();
+      refetchSuggestions();
+    }
+  }, [JSON.stringify(currentPrices), isLoading]);
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await refetch();
-    setTimeout(() => setIsRefreshing(false), 500);
+    await syncAllData();
+    setNextSyncIn(AUTO_SYNC_INTERVAL / 1000);
+  };
+
+  const toggleAutoSync = () => {
+    setAutoSyncEnabled(!autoSyncEnabled);
+    toast.info(autoSyncEnabled ? "Auto-sync disabled" : "Auto-sync enabled");
   };
 
   // Create base prices map for city rates table
@@ -46,6 +111,12 @@ const Index = () => {
   metals.forEach(metal => {
     basePrices[metal.metal] = metal.pricePerGram;
   });
+
+  const formatNextSync = () => {
+    const mins = Math.floor(nextSyncIn / 60);
+    const secs = nextSyncIn % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,6 +127,28 @@ const Index = () => {
       />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Auto-Sync Status Bar */}
+        <div className="mb-4 flex items-center justify-between bg-card border border-border rounded-lg px-4 py-2">
+          <div className="flex items-center gap-3">
+            <RefreshCw className={`h-4 w-4 ${autoSyncEnabled ? 'text-success animate-spin-slow' : 'text-muted-foreground'}`} />
+            <span className="text-sm text-muted-foreground">
+              Auto Price Sync: 
+            </span>
+            <Badge 
+              variant={autoSyncEnabled ? "default" : "secondary"} 
+              className="cursor-pointer"
+              onClick={toggleAutoSync}
+            >
+              {autoSyncEnabled ? 'ON' : 'OFF'}
+            </Badge>
+          </div>
+          {autoSyncEnabled && (
+            <span className="text-xs text-muted-foreground">
+              Next sync in: {formatNextSync()}
+            </span>
+          )}
+        </div>
+
         {/* Market News Section - Moved to top with faster scroll */}
         <div className="mb-8">
           <MarketNews />
