@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PredictionData {
@@ -22,8 +22,9 @@ export const usePredictions = (metal: string) => {
   const [analysis, setAnalysis] = useState<PredictionAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef<string | null>(null);
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -92,13 +93,15 @@ export const usePredictions = (metal: string) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [metal]);
 
+  // Fetch only when metal changes and hasn't been fetched before
   useEffect(() => {
-    if (metal) {
+    if (metal && hasFetchedRef.current !== metal) {
+      hasFetchedRef.current = metal;
       fetchPredictions();
     }
-  }, [metal]);
+  }, [metal, fetchPredictions]);
 
   return { predictions, analysis, isLoading, error, refetch: fetchPredictions };
 };
