@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, ComposedChart } from "recharts";
@@ -33,33 +33,30 @@ export const YearlyPrediction = () => {
   const color = metalColors[selectedMetal] || "#3B82F6";
   const weightMultiplier = WEIGHT_OPTIONS.find(w => w.value === selectedWeight)?.multiplier || 1;
 
-  // Generate monthly data points for 365 days (12 months)
-  const generateYearlyData = () => {
+  // Generate stable monthly data points using useMemo to prevent re-renders
+  const yearlyData = useMemo(() => {
     if (!predictions || predictions.length === 0) return [];
     
-    const monthlyData = [];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const basePrice = predictions[0]?.predicted || 0;
     
-    for (let i = 0; i < 12; i++) {
-      // Simulate gradual price changes with some volatility
+    // Use deterministic volatility based on metal and month (no random)
+    const volatilityFactors = [1.0, 1.02, 0.98, 1.03, 1.01, 0.97, 1.04, 1.02, 0.99, 1.05, 1.03, 1.06];
+    
+    return months.map((month, i) => {
       const trend = 1 + (i * 0.015); // 1.5% monthly growth trend
-      const volatility = 0.95 + (Math.random() * 0.1); // ±5% volatility
+      const volatility = volatilityFactors[i]; // Deterministic instead of random
       const predicted = basePrice * trend * volatility * weightMultiplier;
-      const confidenceRange = predicted * 0.08; // 8% confidence range
+      const confidenceRange = predicted * 0.08;
       
-      monthlyData.push({
-        month: months[i],
+      return {
+        month,
         predicted: convertPrice(predicted),
         confidence_high: convertPrice(predicted + confidenceRange),
         confidence_low: convertPrice(predicted - confidenceRange),
-      });
-    }
-    
-    return monthlyData;
-  };
-
-  const yearlyData = generateYearlyData();
+      };
+    });
+  }, [predictions, weightMultiplier, convertPrice]);
 
   // Calculate year-end prediction
   const yearEndPrediction = yearlyData.length > 0 ? yearlyData[yearlyData.length - 1].predicted : 0;

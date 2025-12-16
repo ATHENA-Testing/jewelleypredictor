@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TimingSuggestion {
@@ -21,12 +21,19 @@ interface CurrentPrices {
 export const useBuySellSuggestions = (currentPrices?: CurrentPrices) => {
   const [suggestions, setSuggestions] = useState<TimingSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const pricesRef = useRef<CurrentPrices | undefined>(currentPrices);
+  const hasFetchedRef = useRef(false);
+
+  // Update ref when prices change, but don't trigger re-fetch
+  useEffect(() => {
+    pricesRef.current = currentPrices;
+  }, [currentPrices]);
 
   const fetchSuggestions = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch latest prices from price history if not provided
-      let livePrices: CurrentPrices = currentPrices || {};
+      // Use ref for prices to avoid re-render loops
+      let livePrices: CurrentPrices = pricesRef.current || {};
       
       if (!currentPrices || Object.keys(currentPrices).length === 0) {
         const { data: latestPrices } = await supabase
@@ -145,10 +152,14 @@ export const useBuySellSuggestions = (currentPrices?: CurrentPrices) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPrices]);
+  }, []); // No dependencies - uses ref for prices
 
+  // Fetch only once on mount
   useEffect(() => {
-    fetchSuggestions();
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchSuggestions();
+    }
   }, [fetchSuggestions]);
 
   return { suggestions, isLoading, refetch: fetchSuggestions };

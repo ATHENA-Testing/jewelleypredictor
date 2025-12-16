@@ -88,13 +88,8 @@ const Index = () => {
     };
   }, [autoSyncEnabled, syncAllData]);
 
-  // Refresh dependent hooks when prices change
-  useEffect(() => {
-    if (Object.keys(currentPrices).length > 0 && !isLoading) {
-      refetchRecommendations();
-      refetchSuggestions();
-    }
-  }, [JSON.stringify(currentPrices), isLoading]);
+  // Note: Removed auto-refresh on price change to prevent continuous blinking
+  // Prices are synced via manual refresh or auto-sync timer
 
   const handleRefresh = async () => {
     await syncAllData();
