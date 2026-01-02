@@ -6,8 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const METALPRICE_API_KEY = Deno.env.get('METALPRICE_API_KEY');
-const METALPRICE_API_URL = "https://api.metalpriceapi.com/v1/latest";
 const TROY_OZ_TO_GRAMS = 31.1035;
 
 interface MetalPrice {
@@ -67,59 +65,121 @@ async function fetchManualRates(): Promise<Record<string, number> | null> {
   }
 }
 
-// Import duty and tax adjustment factor
-const INDIA_PREMIUM_FACTOR = 1.20;
-
-async function fetchFromMetalPriceAPI(manualRates: Record<string, number>): Promise<Record<string, number> | null> {
-  if (!METALPRICE_API_KEY) {
-    console.log('No API key found, will use manual rates');
+// Scrape live rates from GoodReturns.in
+async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
+  try {
+    console.log('Fetching live rates from GoodReturns.in');
+    
+    // Fetch gold rates from Hyderabad page (All India base)
+    const goldResponse = await fetch('https://www.goodreturns.in/gold-rates/hyderabad.html', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    if (!goldResponse.ok) {
+      console.error('Failed to fetch gold rates from GoodReturns');
+      return null;
+    }
+    
+    const goldHtml = await goldResponse.text();
+    
+    // Extract gold rates using regex patterns
+    // Looking for patterns like "₹13,507" near "24K Gold"
+    const gold24kMatch = goldHtml.match(/24K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                         goldHtml.match(/₹\s*([\d,]+)[\s\S]*?24\s*(?:Carat|karat|K)/i);
+    const gold22kMatch = goldHtml.match(/22K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                         goldHtml.match(/₹\s*([\d,]+)[\s\S]*?22\s*(?:Carat|karat|K)/i);
+    
+    let gold24k: number | null = null;
+    let gold22k: number | null = null;
+    
+    if (gold24kMatch) {
+      gold24k = parseInt(gold24kMatch[1].replace(/,/g, ''));
+      console.log('Extracted Gold 24K rate:', gold24k);
+    }
+    
+    if (gold22kMatch) {
+      gold22k = parseInt(gold22kMatch[1].replace(/,/g, ''));
+      console.log('Extracted Gold 22K rate:', gold22k);
+    }
+    
+    // Fetch silver rates
+    const silverResponse = await fetch('https://www.goodreturns.in/silver-rates/hyderabad.html', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    
+    let silver: number | null = null;
+    
+    if (silverResponse.ok) {
+      const silverHtml = await silverResponse.text();
+      const silverMatch = silverHtml.match(/Silver\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                          silverHtml.match(/₹\s*([\d,]+)[\s\S]*?per\s*gram/i);
+      
+      if (silverMatch) {
+        silver = parseInt(silverMatch[1].replace(/,/g, ''));
+        console.log('Extracted Silver rate:', silver);
+      }
+    }
+    
+    // Validate extracted rates
+    if (!gold24k || !gold22k || gold24k < 5000 || gold24k > 20000 || gold22k < 5000 || gold22k > 20000) {
+      console.log('Invalid gold rates extracted, falling back to manual rates');
+      return null;
+    }
+    
+    const rates: Record<string, number> = {
+      GOLD_24K: gold24k,
+      GOLD_22K: gold22k,
+      SILVER: silver || 100, // Will be overridden by manual rate if invalid
+    };
+    
+    console.log('GoodReturns live rates:', JSON.stringify(rates));
+    return rates;
+    
+  } catch (error) {
+    console.error('Error fetching from GoodReturns:', error);
     return null;
   }
+}
 
-  console.log('Fetching from MetalpriceAPI for reference');
-
+// Update manual rates in database with live scraped data
+async function updateManualRates(rates: Record<string, number>): Promise<void> {
   try {
-    const symbols = 'XAU,XAG,XPT,XPD';
-    const url = `${METALPRICE_API_URL}?api_key=${METALPRICE_API_KEY}&base=INR&currencies=${symbols}`;
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
     
-    const response = await fetch(url);
-    const data = await response.json();
+    const updates = [
+      { metal: 'Gold 24K', price: rates.GOLD_24K },
+      { metal: 'Gold 22K', price: rates.GOLD_22K },
+    ];
     
-    console.log('MetalpriceAPI data:', JSON.stringify(data));
-
-    if (!data.success || !data.rates) {
-      console.log('Invalid API response, using manual rates');
-      return null;
+    if (rates.SILVER && rates.SILVER > 50) {
+      updates.push({ metal: 'Silver', price: rates.SILVER });
     }
-
-    const xauPerOz = data.rates['INRXAU'] || (1 / data.rates['XAU']);
-    const xagPerOz = data.rates['INRXAG'] || (1 / data.rates['XAG']);
-    const xptPerOz = data.rates['INRXPT'] || (1 / data.rates['XPT']);
-    const xpdPerOz = data.rates['INRXPD'] || (1 / data.rates['XPD']);
-
-    const rates: Record<string, number> = {
-      GOLD_24K: (xauPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
-      GOLD_22K: ((xauPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR) * (22/24),
-      SILVER: (xagPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
-      PLATINUM: (xptPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
-      PALLADIUM: (xpdPerOz / TROY_OZ_TO_GRAMS) * INDIA_PREMIUM_FACTOR,
-    };
-
-    console.log('Calculated API rates:', JSON.stringify(rates));
     
-    // Validate rates against manual rates (within 15% tolerance)
-    const isGoldValid = Math.abs(rates.GOLD_24K - manualRates.GOLD_24K) / manualRates.GOLD_24K < 0.15;
-    const isSilverValid = Math.abs(rates.SILVER - manualRates.SILVER) / manualRates.SILVER < 0.15;
-    
-    if (!isGoldValid || !isSilverValid) {
-      console.log('API rates differ significantly from manual rates, using manual rates instead');
-      return null;
+    for (const update of updates) {
+      const { error } = await supabaseClient
+        .from('manual_market_rates')
+        .update({ 
+          price_per_gram: update.price,
+          updated_at: new Date().toISOString(),
+          notes: `Auto-updated from GoodReturns.in on ${new Date().toLocaleDateString('en-IN')}`
+        })
+        .eq('metal', update.metal);
+        
+      if (error) {
+        console.error(`Error updating ${update.metal}:`, error);
+      } else {
+        console.log(`Updated ${update.metal} to ₹${update.price}/gram`);
+      }
     }
-
-    return rates;
   } catch (error) {
-    console.error('Error fetching from API:', error);
-    return null;
+    console.error('Error updating manual rates:', error);
   }
 }
 
@@ -132,7 +192,10 @@ serve(async (req) => {
     await req.json().catch(() => ({}));
     console.log('Fetching metal prices (Indian domestic rates)');
 
-    // PRIORITY 1: Fetch admin-set manual rates from database
+    // PRIORITY 1: Try to fetch live rates from GoodReturns.in
+    const liveRates = await fetchFromGoodReturns();
+    
+    // PRIORITY 2: Fetch admin-set manual rates from database as fallback
     const manualRates = await fetchManualRates();
     
     if (!manualRates || Object.keys(manualRates).length < 6) {
@@ -146,15 +209,30 @@ serve(async (req) => {
       });
     }
 
-    // PRIORITY 2: Try API but validate against manual rates
-    let ratesPerGram = await fetchFromMetalPriceAPI(manualRates);
-    let usingFallback = false;
+    let ratesPerGram: Record<string, number>;
+    let usingLiveRates = false;
     
-    // PRIORITY 3: Fall back to manual rates if API fails or returns invalid data
-    if (!ratesPerGram) {
+    // Use live rates if available and valid, otherwise use manual rates
+    if (liveRates && liveRates.GOLD_24K && liveRates.GOLD_22K) {
+      // Merge live rates with manual rates (live takes precedence for gold)
+      ratesPerGram = {
+        ...manualRates,
+        GOLD_24K: liveRates.GOLD_24K,
+        GOLD_22K: liveRates.GOLD_22K,
+      };
+      
+      if (liveRates.SILVER && liveRates.SILVER > 50) {
+        ratesPerGram.SILVER = liveRates.SILVER;
+      }
+      
+      usingLiveRates = true;
+      console.log('Using live rates from GoodReturns.in');
+      
+      // Update manual rates in database for consistency
+      await updateManualRates(liveRates);
+    } else {
       ratesPerGram = manualRates;
-      usingFallback = true;
-      console.log('Using admin-set manual rates');
+      console.log('Using admin-set manual rates (live fetch failed)');
     }
 
     const timestamp = Date.now();
@@ -261,7 +339,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       metals, 
       success: true,
-      usingFallback
+      usingLiveRates,
+      source: usingLiveRates ? 'GoodReturns.in' : 'Manual rates'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
