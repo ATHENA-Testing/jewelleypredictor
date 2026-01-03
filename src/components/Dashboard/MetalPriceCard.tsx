@@ -1,7 +1,8 @@
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Clock, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { format } from "date-fns";
 
 interface MetalPriceCardProps {
   metal: string;
@@ -12,6 +13,8 @@ interface MetalPriceCardProps {
   changePercent: number;
   unit: string;
   colorClass: string;
+  source?: string;
+  lastUpdated?: string;
 }
 
 export const MetalPriceCard = ({
@@ -22,10 +25,16 @@ export const MetalPriceCard = ({
   changePercent,
   unit,
   colorClass,
+  source = "Manual",
+  lastUpdated,
 }: MetalPriceCardProps) => {
   const { formatPrice } = useCurrency();
   const isPositive = change >= 0;
   const changePerGram = change / 31.1035;
+
+  const formattedTime = lastUpdated 
+    ? format(new Date(lastUpdated), "dd MMM, hh:mm a")
+    : format(new Date(), "dd MMM, hh:mm a");
 
   return (
     <Card className={cn(
@@ -62,6 +71,25 @@ export const MetalPriceCard = ({
               {isPositive ? "+" : ""}{formatPrice(Math.abs(changePerGram))}
             </span>
             <span className="text-xs text-muted-foreground">{unit}</span>
+          </div>
+        </div>
+
+        {/* Last Updated & Source */}
+        <div className="mt-4 pt-3 border-t border-border/50">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>{formattedTime}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Globe className="w-3 h-3" />
+              <span className={cn(
+                "font-medium",
+                source === "GoodReturns.in" ? "text-success" : "text-primary"
+              )}>
+                {source}
+              </span>
+            </div>
           </div>
         </div>
       </div>

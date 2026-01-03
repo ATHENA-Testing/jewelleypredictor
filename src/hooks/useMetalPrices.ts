@@ -13,6 +13,8 @@ export interface MetalData {
   colorClass: string;
   timestamp?: number;
   location?: string;
+  source?: string;
+  lastUpdated?: string;
 }
 
 const METAL_COLOR_CLASSES: Record<string, string> = {
@@ -99,6 +101,7 @@ export const useMetalPrices = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [dataSource, setDataSource] = useState<string>('Manual');
   const { selectedCity, getCityLabel } = useCity();
 
   const applyCityAdjustments = useCallback((basePrices: MetalData[], city: string): MetalData[] => {
@@ -147,15 +150,21 @@ export const useMetalPrices = () => {
       if (functionError) throw functionError;
 
       if (data?.metals) {
+        const source = data.source || 'Manual';
+        const updateTime = new Date();
+        
         const metalsWithColors = data.metals.map((metal: MetalData) => ({
           ...metal,
           colorClass: METAL_COLOR_CLASSES[metal.metal] || "border-border/50",
+          source: source,
+          lastUpdated: updateTime.toISOString(),
         }));
         
         setCachedData(metalsWithColors);
         setBaseMetals(metalsWithColors);
         setMetals(applyCityAdjustments(metalsWithColors, selectedCity));
-        setLastUpdate(new Date());
+        setLastUpdate(updateTime);
+        setDataSource(source);
       }
     } catch (err) {
       console.error('Error fetching metal prices:', err);
@@ -190,5 +199,5 @@ export const useMetalPrices = () => {
     return fetchPrices(true);
   }, [fetchPrices]);
 
-  return { metals, isLoading, error, lastUpdate, refetch };
+  return { metals, isLoading, error, lastUpdate, refetch, dataSource };
 };
