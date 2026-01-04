@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.generate-market-analysis]
 verify_jwt = false
+
+[functions.firecrawl-scrape-rates]
+verify_jwt = false
