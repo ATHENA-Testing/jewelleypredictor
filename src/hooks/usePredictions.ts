@@ -95,7 +95,7 @@ export const usePredictions = (metal: string) => {
     }
   }, [metal]);
 
-  // Fetch only when metal changes and hasn't been fetched before
+  // Fetch when metal changes
   useEffect(() => {
     if (metal && hasFetchedRef.current !== metal) {
       hasFetchedRef.current = metal;
@@ -103,5 +103,11 @@ export const usePredictions = (metal: string) => {
     }
   }, [metal, fetchPredictions]);
 
-  return { predictions, analysis, isLoading, error, refetch: fetchPredictions };
+  // Clear predictions when metal changes to force fresh fetch
+  const resetAndRefetch = useCallback(() => {
+    hasFetchedRef.current = null;
+    return fetchPredictions();
+  }, [fetchPredictions]);
+
+  return { predictions, analysis, isLoading, error, refetch: resetAndRefetch };
 };
