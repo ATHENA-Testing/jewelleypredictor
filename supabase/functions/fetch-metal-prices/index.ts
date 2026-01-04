@@ -65,14 +65,120 @@ async function fetchManualRates(): Promise<Record<string, number> | null> {
   }
 }
 
-// Note: GoodReturns.in uses client-side JavaScript rendering which cannot be scraped by edge functions
-// The function now relies on manual rates that should be updated daily via admin panel or external cron
-// For true real-time scraping, a headless browser service would be needed
+// Fetch live rates using Firecrawl (handles JavaScript rendering)
+async function fetchWithFirecrawl(): Promise<Record<string, number> | null> {
+  try {
+    const apiKey = Deno.env.get('FIRECRAWL_API_KEY');
+    if (!apiKey) {
+      console.log('Firecrawl API key not configured, skipping Firecrawl');
+      return null;
+    }
 
-// Attempt to scrape live rates from GoodReturns.in (may fail due to JS rendering)
+    console.log('Fetching live rates from GoodReturns.in using Firecrawl...');
+
+    // Scrape gold rates page with Firecrawl
+    const goldResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: 'https://www.goodreturns.in/gold-rates/hyderabad.html',
+        formats: ['markdown'],
+        onlyMainContent: true,
+        waitFor: 2000,
+      }),
+    });
+
+    if (!goldResponse.ok) {
+      console.error('Firecrawl gold scrape failed:', goldResponse.status);
+      return null;
+    }
+
+    const goldData = await goldResponse.json();
+    const goldMarkdown = goldData.data?.markdown || goldData.markdown || '';
+    console.log('Firecrawl gold markdown length:', goldMarkdown.length);
+
+    // Extract gold rates from markdown
+    let gold24k: number | null = null;
+    let gold22k: number | null = null;
+
+    // Pattern: Look for "24K Gold /g" followed by "₹13,582"
+    const gold24kMatch = goldMarkdown.match(/24K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                          goldMarkdown.match(/24\s*(?:Carat|karat)\s*Gold[\s\S]*?₹\s*([\d,]+)/i);
+    const gold22kMatch = goldMarkdown.match(/22K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                          goldMarkdown.match(/22\s*(?:Carat|karat)\s*Gold[\s\S]*?₹\s*([\d,]+)/i);
+
+    if (gold24kMatch && gold24kMatch[1]) {
+      gold24k = parseInt(gold24kMatch[1].replace(/,/g, ''));
+      console.log('Firecrawl extracted Gold 24K:', gold24k);
+    }
+
+    if (gold22kMatch && gold22kMatch[1]) {
+      gold22k = parseInt(gold22kMatch[1].replace(/,/g, ''));
+      console.log('Firecrawl extracted Gold 22K:', gold22k);
+    }
+
+    // Scrape silver rates
+    const silverResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: 'https://www.goodreturns.in/silver-rates/hyderabad.html',
+        formats: ['markdown'],
+        onlyMainContent: true,
+        waitFor: 2000,
+      }),
+    });
+
+    let silver: number | null = null;
+
+    if (silverResponse.ok) {
+      const silverData = await silverResponse.json();
+      const silverMarkdown = silverData.data?.markdown || silverData.markdown || '';
+      console.log('Firecrawl silver markdown length:', silverMarkdown.length);
+
+      const silverMatch = silverMarkdown.match(/Silver\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
+                           silverMarkdown.match(/₹\s*([\d,]+)\s*per\s*gram/i);
+
+      if (silverMatch && silverMatch[1]) {
+        silver = parseInt(silverMatch[1].replace(/,/g, ''));
+        console.log('Firecrawl extracted Silver:', silver);
+      }
+    }
+
+    // Validate rates
+    if (!gold24k || !gold22k || gold24k < 5000 || gold24k > 25000 || gold22k < 5000 || gold22k > 25000) {
+      console.log('Invalid Firecrawl gold rates - 24K:', gold24k, '22K:', gold22k);
+      return null;
+    }
+
+    const rates: Record<string, number> = {
+      GOLD_24K: gold24k,
+      GOLD_22K: gold22k,
+    };
+
+    if (silver && silver >= 50 && silver <= 500) {
+      rates.SILVER = silver;
+    }
+
+    console.log('Firecrawl live rates:', JSON.stringify(rates));
+    return rates;
+
+  } catch (error) {
+    console.error('Error fetching with Firecrawl:', error);
+    return null;
+  }
+}
+
+// Legacy: Attempt to scrape live rates directly (may fail due to JS rendering)
 async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
   try {
-    console.log('Attempting to fetch live rates from GoodReturns.in');
+    console.log('Attempting direct fetch from GoodReturns.in (fallback)');
     console.log('Note: This may fail as GoodReturns uses JavaScript rendering');
     
     // Fetch gold rates from Hyderabad page
@@ -263,10 +369,17 @@ serve(async (req) => {
     await req.json().catch(() => ({}));
     console.log('Fetching metal prices (Indian domestic rates)');
 
-    // PRIORITY 1: Try to fetch live rates from GoodReturns.in
-    const liveRates = await fetchFromGoodReturns();
+    // PRIORITY 1: Try Firecrawl first (handles JavaScript rendering)
+    let liveRates = await fetchWithFirecrawl();
+    let source = 'GoodReturns.in via Firecrawl';
     
-    // PRIORITY 2: Fetch admin-set manual rates from database as fallback
+    // PRIORITY 2: Try direct fetch (fallback, may fail due to JS rendering)
+    if (!liveRates) {
+      liveRates = await fetchFromGoodReturns();
+      source = 'GoodReturns.in';
+    }
+    
+    // PRIORITY 3: Fetch admin-set manual rates from database as fallback
     const manualRates = await fetchManualRates();
     
     if (!manualRates || Object.keys(manualRates).length < 6) {
@@ -297,12 +410,13 @@ serve(async (req) => {
       }
       
       usingLiveRates = true;
-      console.log('Using live rates from GoodReturns.in');
+      console.log('Using live rates from', source);
       
       // Update manual rates in database for consistency
       await updateManualRates(liveRates);
     } else {
       ratesPerGram = manualRates;
+      source = 'Manual rates';
       console.log('Using admin-set manual rates (live fetch failed)');
     }
 
