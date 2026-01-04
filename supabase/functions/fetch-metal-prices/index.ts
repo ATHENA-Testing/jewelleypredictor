@@ -65,41 +65,83 @@ async function fetchManualRates(): Promise<Record<string, number> | null> {
   }
 }
 
-// Scrape live rates from GoodReturns.in
+// Note: GoodReturns.in uses client-side JavaScript rendering which cannot be scraped by edge functions
+// The function now relies on manual rates that should be updated daily via admin panel or external cron
+// For true real-time scraping, a headless browser service would be needed
+
+// Attempt to scrape live rates from GoodReturns.in (may fail due to JS rendering)
 async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
   try {
-    console.log('Fetching live rates from GoodReturns.in');
+    console.log('Attempting to fetch live rates from GoodReturns.in');
+    console.log('Note: This may fail as GoodReturns uses JavaScript rendering');
     
-    // Fetch gold rates from Hyderabad page (All India base)
+    // Fetch gold rates from Hyderabad page
     const goldResponse = await fetch('https://www.goodreturns.in/gold-rates/hyderabad.html', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
       }
     });
     
     if (!goldResponse.ok) {
-      console.error('Failed to fetch gold rates from GoodReturns');
+      console.error('Failed to fetch gold rates from GoodReturns, status:', goldResponse.status);
       return null;
     }
     
     const goldHtml = await goldResponse.text();
-    
-    // Extract gold rates using regex patterns
-    // Looking for patterns like "₹13,507" near "24K Gold"
-    const gold24kMatch = goldHtml.match(/24K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
-                         goldHtml.match(/₹\s*([\d,]+)[\s\S]*?24\s*(?:Carat|karat|K)/i);
-    const gold22kMatch = goldHtml.match(/22K\s*Gold\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
-                         goldHtml.match(/₹\s*([\d,]+)[\s\S]*?22\s*(?:Carat|karat|K)/i);
+    console.log('Gold HTML length:', goldHtml.length);
     
     let gold24k: number | null = null;
     let gold22k: number | null = null;
     
+    // Pattern 1: Look for span with id="24K-price" - handle both ₹ and unicode
+    let gold24kMatch = goldHtml.match(/id\s*=\s*["']24K-price["'][^>]*>[\s]*[₹\u20B9]?\s*([\d,]+)/i);
+    let gold22kMatch = goldHtml.match(/id\s*=\s*["']22K-price["'][^>]*>[\s]*[₹\u20B9]?\s*([\d,]+)/i);
+    
     if (gold24kMatch) {
+      console.log('Pattern 1 matched for 24K:', gold24kMatch[1]);
+    }
+    if (gold22kMatch) {
+      console.log('Pattern 1 matched for 22K:', gold22kMatch[1]);
+    }
+    
+    // Pattern 2: Look for price in the intro text with strong tags
+    if (!gold24kMatch) {
+      gold24kMatch = goldHtml.match(/<strong>[₹\u20B9]?([\d,]+)<\/strong>\s*(?:<\/strong>)?\s*per\s*gram\s*for\s*24/i);
+      if (gold24kMatch) console.log('Pattern 2 matched for 24K:', gold24kMatch[1]);
+    }
+    if (!gold22kMatch) {
+      gold22kMatch = goldHtml.match(/<strong>[₹\u20B9]?([\d,]+)<\/strong>\s*(?:<\/strong>)?\s*per\s*gram\s*for\s*22/i);
+      if (gold22kMatch) console.log('Pattern 2 matched for 22K:', gold22kMatch[1]);
+    }
+    
+    // Pattern 3: Look for the table row pattern "Today 24 Carat Gold Rate"
+    if (!gold24kMatch) {
+      gold24kMatch = goldHtml.match(/24\s*Carat[\s\S]{0,200}?<td>[₹\u20B9]?([\d,]+)<\/td>/i);
+      if (gold24kMatch) console.log('Pattern 3 matched for 24K:', gold24kMatch[1]);
+    }
+    if (!gold22kMatch) {
+      gold22kMatch = goldHtml.match(/22\s*Carat[\s\S]{0,200}?<td>[₹\u20B9]?([\d,]+)<\/td>/i);
+      if (gold22kMatch) console.log('Pattern 3 matched for 22K:', gold22kMatch[1]);
+    }
+    
+    // Pattern 4: Generic pattern for "24K Gold" followed by price
+    if (!gold24kMatch) {
+      gold24kMatch = goldHtml.match(/24K\s*(?:Gold)?\s*[^<]*?[₹\u20B9]([\d,]+)/i);
+      if (gold24kMatch) console.log('Pattern 4 matched for 24K:', gold24kMatch[1]);
+    }
+    if (!gold22kMatch) {
+      gold22kMatch = goldHtml.match(/22K\s*(?:Gold)?\s*[^<]*?[₹\u20B9]([\d,]+)/i);
+      if (gold22kMatch) console.log('Pattern 4 matched for 22K:', gold22kMatch[1]);
+    }
+    
+    if (gold24kMatch && gold24kMatch[1]) {
       gold24k = parseInt(gold24kMatch[1].replace(/,/g, ''));
       console.log('Extracted Gold 24K rate:', gold24k);
     }
     
-    if (gold22kMatch) {
+    if (gold22kMatch && gold22kMatch[1]) {
       gold22k = parseInt(gold22kMatch[1].replace(/,/g, ''));
       console.log('Extracted Gold 22K rate:', gold22k);
     }
@@ -107,7 +149,10 @@ async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
     // Fetch silver rates
     const silverResponse = await fetch('https://www.goodreturns.in/silver-rates/hyderabad.html', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'identity',
       }
     });
     
@@ -115,26 +160,50 @@ async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
     
     if (silverResponse.ok) {
       const silverHtml = await silverResponse.text();
-      const silverMatch = silverHtml.match(/Silver\s*\/g[\s\S]*?₹\s*([\d,]+)/i) ||
-                          silverHtml.match(/₹\s*([\d,]+)[\s\S]*?per\s*gram/i);
+      console.log('Silver HTML length:', silverHtml.length);
       
-      if (silverMatch) {
+      // Pattern 1: Look for "Silver /g" followed by price
+      let silverMatch = silverHtml.match(/Silver\s*\/g[\s\S]*?[₹\u20B9]([\d,]+)/i);
+      if (silverMatch) console.log('Silver Pattern 1 matched:', silverMatch[1]);
+      
+      // Pattern 2: Look for price in intro text
+      if (!silverMatch) {
+        silverMatch = silverHtml.match(/<strong>[₹\u20B9]?([\d,]+)<\/strong>\s*per\s*gram/i);
+        if (silverMatch) console.log('Silver Pattern 2 matched:', silverMatch[1]);
+      }
+      
+      // Pattern 3: Look in table for 1 gram price  
+      if (!silverMatch) {
+        silverMatch = silverHtml.match(/<td>1<\/td>\s*<td>[₹\u20B9]?([\d,]+)<\/td>/i);
+        if (silverMatch) console.log('Silver Pattern 3 matched:', silverMatch[1]);
+      }
+      
+      if (silverMatch && silverMatch[1]) {
         silver = parseInt(silverMatch[1].replace(/,/g, ''));
         console.log('Extracted Silver rate:', silver);
       }
     }
     
-    // Validate extracted rates
-    if (!gold24k || !gold22k || gold24k < 5000 || gold24k > 20000 || gold22k < 5000 || gold22k > 20000) {
-      console.log('Invalid gold rates extracted, falling back to manual rates');
+    // Validate extracted rates - Gold should be between 5000-25000 per gram (INR)
+    if (!gold24k || !gold22k || gold24k < 5000 || gold24k > 25000 || gold22k < 5000 || gold22k > 25000) {
+      console.log('Invalid gold rates extracted - 24K:', gold24k, '22K:', gold22k);
       return null;
+    }
+    
+    // Validate silver - should be between 50-500 per gram
+    if (silver && (silver < 50 || silver > 500)) {
+      console.log('Invalid silver rate extracted:', silver);
+      silver = null;
     }
     
     const rates: Record<string, number> = {
       GOLD_24K: gold24k,
       GOLD_22K: gold22k,
-      SILVER: silver || 100, // Will be overridden by manual rate if invalid
     };
+    
+    if (silver) {
+      rates.SILVER = silver;
+    }
     
     console.log('GoodReturns live rates:', JSON.stringify(rates));
     return rates;
@@ -163,12 +232,14 @@ async function updateManualRates(rates: Record<string, number>): Promise<void> {
     }
     
     for (const update of updates) {
+      if (!update.price) continue;
+      
       const { error } = await supabaseClient
         .from('manual_market_rates')
         .update({ 
           price_per_gram: update.price,
           updated_at: new Date().toISOString(),
-          notes: `Auto-updated from GoodReturns.in on ${new Date().toLocaleDateString('en-IN')}`
+          notes: `Auto-updated from GoodReturns.in on ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`
         })
         .eq('metal', update.metal);
         
@@ -214,7 +285,7 @@ serve(async (req) => {
     
     // Use live rates if available and valid, otherwise use manual rates
     if (liveRates && liveRates.GOLD_24K && liveRates.GOLD_22K) {
-      // Merge live rates with manual rates (live takes precedence for gold)
+      // Merge live rates with manual rates (live takes precedence for gold/silver)
       ratesPerGram = {
         ...manualRates,
         GOLD_24K: liveRates.GOLD_24K,
@@ -309,12 +380,12 @@ serve(async (req) => {
     console.log("Processed metal prices:", JSON.stringify(metals));
 
     // Store historical price data
-    try {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
+    try {
       const historyRecords = metals.map(metal => ({
         metal: metal.metal,
         price_per_gram: metal.pricePerGram,
@@ -340,7 +411,8 @@ serve(async (req) => {
       metals, 
       success: true,
       usingLiveRates,
-      source: usingLiveRates ? 'GoodReturns.in' : 'Manual rates'
+      source: usingLiveRates ? 'GoodReturns.in' : 'Manual rates',
+      lastUpdated: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
