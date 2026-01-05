@@ -1,20 +1,52 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, RefreshCw, Activity } from "lucide-react";
+import { Sparkles, RefreshCw, Activity, Zap } from "lucide-react";
 import { useCurrency, CURRENCY_SYMBOLS } from "@/contexts/CurrencyContext";
 import { useCity, INDIAN_CITIES } from "@/contexts/CityContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
 
 interface HeaderProps {
   lastUpdate?: Date;
   isRefreshing?: boolean;
   onRefresh?: () => void;
   showRefresh?: boolean;
+  onFullRefresh?: () => void;
 }
 
-export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefresh = true }: HeaderProps) => {
+export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefresh = true, onFullRefresh }: HeaderProps) => {
   const { currency, setCurrency } = useCurrency();
   const { selectedCity, setSelectedCity, getCityLabel } = useCity();
+  const [isFullRefreshing, setIsFullRefreshing] = useState(false);
+
+  const handleFullRefresh = async () => {
+    setIsFullRefreshing(true);
+    toast.info("Starting full data refresh for all metals...");
+    
+    try {
+      // Call the daily-rates-refresh edge function
+      const { data, error } = await supabase.functions.invoke('daily-rates-refresh', {
+        body: {}
+      });
+
+      if (error) {
+        console.error('Full refresh error:', error);
+        toast.error("Full refresh failed. Please try again.");
+      } else {
+        toast.success("Full refresh completed! All rates and predictions updated.");
+        // Trigger the parent refresh to update UI
+        if (onFullRefresh) onFullRefresh();
+        if (onRefresh) onRefresh();
+      }
+    } catch (err) {
+      console.error('Full refresh error:', err);
+      toast.error("Full refresh failed. This may take a while - check back in a few minutes.");
+    } finally {
+      setIsFullRefreshing(false);
+    }
+  };
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -64,16 +96,28 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
               </SelectContent>
             </Select>
 
-            {showRefresh && onRefresh && (
+            {showRefresh && (
               <>
+                {onRefresh && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={onRefresh}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                )}
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm"
-                  onClick={onRefresh}
-                  disabled={isRefreshing}
+                  onClick={handleFullRefresh}
+                  disabled={isFullRefreshing}
+                  className="bg-gradient-primary"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Refresh
+                  <Zap className={`w-4 h-4 mr-2 ${isFullRefreshing ? 'animate-pulse' : ''}`} />
+                  {isFullRefreshing ? 'Refreshing...' : 'Full Refresh'}
                 </Button>
                 {lastUpdate && (
                   <span className="text-xs text-muted-foreground">
