@@ -21,12 +21,7 @@ import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-const TECHNICAL_INDICATORS = [
-  { name: "RSI (14)", value: 65.4, signal: "bullish" as const, description: "Momentum indicator suggesting upward pressure" },
-  { name: "MACD", value: 12.8, signal: "bullish" as const, description: "Trend following momentum indicator shows buy signal" },
-  { name: "Moving Average (50)", value: 2038.2, signal: "bullish" as const, description: "Price trading above 50-day moving average" },
-  { name: "Bollinger Bands", value: 78.5, signal: "neutral" as const, description: "Price within normal volatility range" },
-];
+// Technical indicators are now fetched dynamically via useTechnicalIndicators hook
 
 const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -211,7 +206,7 @@ const Index = () => {
 
           <TabsContent value="technical" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TechnicalIndicators metal={selectedMetal} indicators={TECHNICAL_INDICATORS} />
+              <TechnicalIndicators metal={selectedMetal} />
               <MarketAnalysisCard 
                 analysis={marketAnalysis} 
                 isLoading={marketLoading}

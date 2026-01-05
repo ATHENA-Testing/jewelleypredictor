@@ -1,21 +1,27 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Indicator {
-  name: string;
-  value: number;
-  signal: "bullish" | "bearish" | "neutral";
-  description: string;
-}
+import { useTechnicalIndicators } from "@/hooks/useTechnicalIndicators";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 interface TechnicalIndicatorsProps {
   metal: string;
-  indicators: Indicator[];
+  indicators?: Array<{
+    name: string;
+    value: number;
+    signal: "bullish" | "bearish" | "neutral";
+    description: string;
+  }>;
 }
 
-export const TechnicalIndicators = ({ metal, indicators }: TechnicalIndicatorsProps) => {
+export const TechnicalIndicators = ({ metal, indicators: propIndicators }: TechnicalIndicatorsProps) => {
+  const { indicators: liveIndicators, isLoading, refetch } = useTechnicalIndicators(metal);
+  
+  // Use live indicators if available, otherwise fall back to prop indicators
+  const indicators = liveIndicators.length > 0 ? liveIndicators : propIndicators || [];
+
   const getSignalIcon = (signal: string) => {
     switch (signal) {
       case "bullish":
@@ -38,11 +44,38 @@ export const TechnicalIndicators = ({ metal, indicators }: TechnicalIndicatorsPr
     }
   };
 
+  if (isLoading && indicators.length === 0) {
+    return (
+      <Card className="p-6 bg-gradient-card border-2 border-border">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <div className="space-y-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-2 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  const bullishCount = indicators.filter(i => i.signal === "bullish").length;
+  const bearishCount = indicators.filter(i => i.signal === "bearish").length;
+  const overallBullish = bullishCount > bearishCount;
+  const overallNeutral = bullishCount === bearishCount;
+
   return (
     <Card className="p-6 bg-gradient-card border-2 border-border">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-foreground">Technical Analysis</h3>
-        <p className="text-sm text-muted-foreground">{metal} market indicators</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Technical Analysis</h3>
+          <p className="text-sm text-muted-foreground">{metal} market indicators</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => refetch()}>
+          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+        </Button>
       </div>
 
       <div className="space-y-6">
@@ -58,7 +91,7 @@ export const TechnicalIndicators = ({ metal, indicators }: TechnicalIndicatorsPr
               </span>
             </div>
             <Progress 
-              value={Math.min(100, (indicator.value / 100) * 100)} 
+              value={Math.min(100, Math.max(0, indicator.value))} 
               className="h-2"
             />
             <p className="text-xs text-muted-foreground">{indicator.description}</p>
@@ -70,7 +103,12 @@ export const TechnicalIndicators = ({ metal, indicators }: TechnicalIndicatorsPr
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-foreground">Overall Signal</span>
           <div className="flex items-center gap-2">
-            {indicators.filter(i => i.signal === "bullish").length > indicators.filter(i => i.signal === "bearish").length ? (
+            {overallNeutral ? (
+              <>
+                <Minus className="w-5 h-5 text-muted-foreground" />
+                <span className="text-muted-foreground font-semibold">Neutral</span>
+              </>
+            ) : overallBullish ? (
               <>
                 <TrendingUp className="w-5 h-5 text-success" />
                 <span className="text-success font-semibold">Bullish</span>

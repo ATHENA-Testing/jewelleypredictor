@@ -1,61 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
-
-interface NewsItem {
-  title: string;
-  sentiment: 'bullish' | 'bearish' | 'neutral';
-  impact: 'high' | 'medium' | 'low';
-  time: string;
-  source: string;
-}
-
-const MOCK_NEWS: NewsItem[] = [
-  {
-    title: "Global gold demand surges as central banks increase reserves amid economic uncertainty",
-    sentiment: 'bullish',
-    impact: 'high',
-    time: '2h ago',
-    source: 'Reuters'
-  },
-  {
-    title: "Silver industrial demand rises 15% driven by solar panel manufacturing boom",
-    sentiment: 'bullish',
-    impact: 'medium',
-    time: '4h ago',
-    source: 'Bloomberg'
-  },
-  {
-    title: "Federal Reserve signals potential rate cuts impacting precious metal valuations",
-    sentiment: 'bullish',
-    impact: 'high',
-    time: '5h ago',
-    source: 'Financial Times'
-  },
-  {
-    title: "Platinum supply constraints from South African mines push prices higher",
-    sentiment: 'bullish',
-    impact: 'medium',
-    time: '7h ago',
-    source: 'Mining Weekly'
-  },
-  {
-    title: "Indian wedding season expected to boost gold purchases by 20%",
-    sentiment: 'bullish',
-    impact: 'high',
-    time: '8h ago',
-    source: 'Economic Times'
-  },
-  {
-    title: "Geopolitical tensions drive safe-haven demand for precious metals",
-    sentiment: 'bullish',
-    impact: 'high',
-    time: '10h ago',
-    source: 'CNBC'
-  }
-];
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMarketNews } from "@/hooks/useMarketNews";
+import { Button } from "@/components/ui/button";
 
 export const MarketNews = () => {
+  const { news, isLoading, error, refetch } = useMarketNews();
+
   const getSentimentIcon = (sentiment: string) => {
     switch (sentiment) {
       case 'bullish':
@@ -78,35 +30,69 @@ export const MarketNews = () => {
     }
   };
 
+  // Calculate overall sentiment
+  const bullishCount = news.filter(n => n.sentiment === 'bullish').length;
+  const bearishCount = news.filter(n => n.sentiment === 'bearish').length;
+  const overallSentiment = bullishCount > bearishCount ? 'Bullish' : 
+                           bearishCount > bullishCount ? 'Bearish' : 'Neutral';
+  const sentimentPercent = news.length > 0 
+    ? Math.round((Math.max(bullishCount, bearishCount) / news.length) * 100)
+    : 50;
+
+  if (isLoading) {
+    return (
+      <Card className="p-6 bg-gradient-card border-2 border-border">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="flex-shrink-0 w-[400px] h-32 rounded-lg" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  const displayNews = news.length > 0 ? news : [
+    { title: "Loading latest market intelligence...", sentiment: 'neutral' as const, impact: 'medium' as const, time: 'Now', source: 'System', metal: 'All' }
+  ];
+
   return (
     <Card className="p-6 bg-gradient-card border-2 border-border overflow-hidden">
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Market Intelligence</h3>
-        <p className="text-sm text-muted-foreground">Latest news & factors influencing metal costs</p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-foreground">Market Intelligence</h3>
+          <p className="text-sm text-muted-foreground">Live AI-analyzed factors influencing metal prices</p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="relative overflow-hidden">
         {/* Scrolling container */}
         <div className="flex gap-4 animate-scroll-news">
           {/* Duplicate items for seamless loop */}
-          {[...MOCK_NEWS, ...MOCK_NEWS].map((news, index) => (
+          {[...displayNews, ...displayNews].map((newsItem, index) => (
             <div
               key={index}
               className="flex-shrink-0 w-[400px] p-4 bg-background/50 rounded-lg border border-border hover:border-primary/50 transition-all"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex items-center gap-2">
-                  {getSentimentIcon(news.sentiment)}
-                  <Badge variant="outline" className={getImpactColor(news.impact)}>
-                    {news.impact.toUpperCase()}
+                  {getSentimentIcon(newsItem.sentiment)}
+                  <Badge variant="outline" className={getImpactColor(newsItem.impact)}>
+                    {newsItem.impact.toUpperCase()}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {newsItem.metal}
                   </Badge>
                 </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{news.time}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{newsItem.time}</span>
               </div>
-              <p className="text-sm text-foreground leading-relaxed mb-2">
-                {news.title}
+              <p className="text-sm text-foreground leading-relaxed mb-2 line-clamp-2">
+                {newsItem.title}
               </p>
-              <p className="text-xs text-muted-foreground">Source: {news.source}</p>
+              <p className="text-xs text-muted-foreground">Source: {newsItem.source}</p>
             </div>
           ))}
         </div>
@@ -115,9 +101,13 @@ export const MarketNews = () => {
       <div className="mt-4 pt-4 border-t border-border">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            AI Sentiment Analysis: <span className="text-success font-semibold">Bullish (78%)</span>
+            AI Sentiment Analysis: <span className={`font-semibold ${overallSentiment === 'Bullish' ? 'text-success' : overallSentiment === 'Bearish' ? 'text-destructive' : 'text-warning'}`}>
+              {overallSentiment} ({sentimentPercent}%)
+            </span>
           </span>
-          <span className="text-muted-foreground">Updated in real-time</span>
+          <span className="text-muted-foreground">
+            {news.length > 0 ? `${news.length} insights • Auto-refreshed` : 'Loading...'}
+          </span>
         </div>
       </div>
     </Card>
