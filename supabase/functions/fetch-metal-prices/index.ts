@@ -65,6 +65,75 @@ async function fetchManualRates(): Promise<Record<string, number> | null> {
   }
 }
 
+// Fetch live rates from Metals.dev API (reliable international source)
+async function fetchFromMetalsDev(): Promise<Record<string, number> | null> {
+  try {
+    const apiKey = Deno.env.get('METALPRICE_API_KEY');
+    if (!apiKey) {
+      console.log('METALPRICE_API_KEY not configured, skipping Metals.dev');
+      return null;
+    }
+
+    console.log('Fetching live rates from Metals.dev API...');
+
+    const response = await fetch(`https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=INR&unit=g`, {
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+
+    if (!response.ok) {
+      console.error('Metals.dev API failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log('Metals.dev response:', JSON.stringify(data));
+
+    if (data.status !== 'success' || !data.metals) {
+      console.error('Invalid Metals.dev response structure');
+      return null;
+    }
+
+    const goldPerGram = data.metals.gold;
+    const silverPerGram = data.metals.silver;
+    const platinumPerGram = data.metals.platinum;
+    const palladiumPerGram = data.metals.palladium;
+
+    if (!goldPerGram || goldPerGram < 5000 || goldPerGram > 20000) {
+      console.log('Invalid gold rate from Metals.dev:', goldPerGram);
+      return null;
+    }
+
+    // Calculate 22K from 24K (22/24 ratio)
+    const gold22k = Math.round(goldPerGram * (22 / 24));
+
+    const rates: Record<string, number> = {
+      GOLD_24K: Math.round(goldPerGram),
+      GOLD_22K: gold22k,
+    };
+
+    if (silverPerGram && silverPerGram >= 50 && silverPerGram <= 500) {
+      rates.SILVER = Math.round(silverPerGram);
+    }
+
+    if (platinumPerGram && platinumPerGram >= 1000 && platinumPerGram <= 10000) {
+      rates.PLATINUM = Math.round(platinumPerGram);
+    }
+
+    if (palladiumPerGram && palladiumPerGram >= 1000 && palladiumPerGram <= 10000) {
+      rates.PALLADIUM = Math.round(palladiumPerGram);
+    }
+
+    console.log('Metals.dev live rates:', JSON.stringify(rates));
+    return rates;
+
+  } catch (error) {
+    console.error('Error fetching from Metals.dev:', error);
+    return null;
+  }
+}
+
 // Fetch live rates using Firecrawl (handles JavaScript rendering)
 async function fetchWithFirecrawl(): Promise<Record<string, number> | null> {
   try {
@@ -321,7 +390,7 @@ async function fetchFromGoodReturns(): Promise<Record<string, number> | null> {
 }
 
 // Update manual rates in database with live scraped data
-async function updateManualRates(rates: Record<string, number>): Promise<void> {
+async function updateManualRates(rates: Record<string, number>, source: string): Promise<void> {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -336,6 +405,14 @@ async function updateManualRates(rates: Record<string, number>): Promise<void> {
     if (rates.SILVER && rates.SILVER > 50) {
       updates.push({ metal: 'Silver', price: rates.SILVER });
     }
+
+    if (rates.PLATINUM && rates.PLATINUM > 1000) {
+      updates.push({ metal: 'Platinum', price: rates.PLATINUM });
+    }
+
+    if (rates.PALLADIUM && rates.PALLADIUM > 1000) {
+      updates.push({ metal: 'Palladium', price: rates.PALLADIUM });
+    }
     
     for (const update of updates) {
       if (!update.price) continue;
@@ -345,7 +422,7 @@ async function updateManualRates(rates: Record<string, number>): Promise<void> {
         .update({ 
           price_per_gram: update.price,
           updated_at: new Date().toISOString(),
-          notes: `Auto-updated from GoodReturns.in on ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`
+          notes: `Auto-updated from ${source} on ${new Date().toLocaleDateString('en-IN')} at ${new Date().toLocaleTimeString('en-IN')}`
         })
         .eq('metal', update.metal);
         
@@ -369,11 +446,17 @@ serve(async (req) => {
     await req.json().catch(() => ({}));
     console.log('Fetching metal prices (Indian domestic rates)');
 
-    // PRIORITY 1: Try Firecrawl first (handles JavaScript rendering)
-    let liveRates = await fetchWithFirecrawl();
-    let source = 'GoodReturns.in via Firecrawl';
+    // PRIORITY 1: Try Metals.dev API first (most reliable)
+    let liveRates = await fetchFromMetalsDev();
+    let source = 'Metals.dev API';
     
-    // PRIORITY 2: Try direct fetch (fallback, may fail due to JS rendering)
+    // PRIORITY 2: Try Firecrawl (handles JavaScript rendering for local rates)
+    if (!liveRates) {
+      liveRates = await fetchWithFirecrawl();
+      source = 'GoodReturns.in via Firecrawl';
+    }
+    
+    // PRIORITY 3: Try direct fetch (fallback, may fail due to JS rendering)
     if (!liveRates) {
       liveRates = await fetchFromGoodReturns();
       source = 'GoodReturns.in';
@@ -413,7 +496,7 @@ serve(async (req) => {
       console.log('Using live rates from', source);
       
       // Update manual rates in database for consistency
-      await updateManualRates(liveRates);
+      await updateManualRates(liveRates, source);
     } else {
       ratesPerGram = manualRates;
       source = 'Manual rates';
