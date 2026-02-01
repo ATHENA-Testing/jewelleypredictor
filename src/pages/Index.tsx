@@ -9,6 +9,7 @@ import { CityRatesTable } from "@/components/Dashboard/CityRatesTable";
 import { BuySellTimingSuggestions } from "@/components/Dashboard/BuySellTimingSuggestions";
 import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable";
 import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComparisonChart";
+import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
@@ -109,13 +110,16 @@ const Index = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  return (
+    return (
     <div className="min-h-screen bg-background">
       <Header 
         lastUpdate={lastUpdate}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
+
+      {/* AI Prediction Ticker - Single line at top */}
+      <PredictionTicker />
 
       <main className="container mx-auto px-4 py-8">
         {/* Auto-Sync Status Bar */}
