@@ -7,6 +7,7 @@ import { YearlyPrediction } from "@/components/Dashboard/YearlyPrediction";
 import { AIRecommendations } from "@/components/Dashboard/AIRecommendations";
 import { CityRatesTable } from "@/components/Dashboard/CityRatesTable";
 import { BuySellTimingSuggestions } from "@/components/Dashboard/BuySellTimingSuggestions";
+import { RateComparison } from "@/components/Dashboard/RateComparison";
 import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable";
 import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComparisonChart";
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
@@ -170,6 +171,11 @@ const Index = () => {
               </div>
             ))
           )}
+        </div>
+
+        {/* Multi-Source Rate Verification */}
+        <div className="mb-8">
+          <RateComparison />
         </div>
 
         {/* AI Recommendations - Flash Scrolling Section */}
