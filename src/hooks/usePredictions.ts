@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { retryWithBackoff } from '@/lib/retryWithBackoff';
 
 export interface PredictionData {
   date: string;
@@ -58,9 +59,10 @@ export const usePredictions = (metal: string) => {
         });
       } else {
         // Generate new predictions
-        const { data, error: functionError } = await supabase.functions.invoke('generate-predictions', {
-          body: { metal }
-        });
+        const { data, error: functionError } = await retryWithBackoff(
+          () => supabase.functions.invoke('generate-predictions', { body: { metal } }),
+          { maxRetries: 3, baseDelayMs: 1500 }
+        );
 
         if (functionError) throw functionError;
 
