@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCity } from '@/contexts/CityContext';
+import { retryWithBackoff } from '@/lib/retryWithBackoff';
 
 export interface MetalData {
   metal: string;
@@ -143,9 +144,10 @@ export const useMetalPrices = () => {
       }
 
       console.log('Fetching fresh metal prices from API');
-      const { data, error: functionError } = await supabase.functions.invoke('fetch-metal-prices', {
-        body: {}
-      });
+      const { data, error: functionError } = await retryWithBackoff(
+        () => supabase.functions.invoke('fetch-metal-prices', { body: {} }),
+        { maxRetries: 3, baseDelayMs: 1500 }
+      );
 
       if (functionError) throw functionError;
 

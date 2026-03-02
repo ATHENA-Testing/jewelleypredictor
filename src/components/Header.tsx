@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, RefreshCw, Activity, Zap } from "lucide-react";
+import { Sparkles, RefreshCw, Activity, Zap, Trash2 } from "lucide-react";
 import { useCurrency, CURRENCY_SYMBOLS } from "@/contexts/CurrencyContext";
 import { useCity, INDIAN_CITIES } from "@/contexts/CityContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,19 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
 
             {showRefresh && (
               <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    localStorage.clear();
+                    toast.success("Cache cleared! Fetching fresh data...");
+                    if (onRefresh) onRefresh();
+                  }}
+                  title="Clear cached data"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear Cache
+                </Button>
                 {onRefresh && (
                   <Button 
                     variant="outline" 
