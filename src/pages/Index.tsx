@@ -11,6 +11,7 @@ import { RateComparison } from "@/components/Dashboard/RateComparison";
 import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable";
 import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComparisonChart";
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
+import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
@@ -144,6 +145,9 @@ const Index = () => {
             </span>
           )}
         </div>
+
+        {/* Today's Best Investment Plan */}
+        <TodayInvestmentPlan />
 
         {/* Market News Section - Moved to top with faster scroll */}
         <div className="mb-8">
