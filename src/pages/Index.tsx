@@ -146,6 +146,9 @@ const Index = () => {
           )}
         </div>
 
+        {/* Today's Best Investment Plan */}
+        <TodayInvestmentPlan />
+
         {/* Market News Section - Moved to top with faster scroll */}
         <div className="mb-8">
           <MarketNews />
