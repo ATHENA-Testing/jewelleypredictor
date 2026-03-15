@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
@@ -12,83 +13,78 @@ import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable"
 import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComparisonChart";
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
+import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, LogIn, Crown } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
 import { useBuySellSuggestions } from "@/hooks/useBuySellSuggestions";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { MarketAnalysisCard } from "@/components/Dashboard/MarketAnalysisCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/Header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-// Technical indicators are now fetched dynamically via useTechnicalIndicators hook
-
-const AUTO_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const AUTO_SYNC_INTERVAL = 5 * 60 * 1000;
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { activeSubscription, hasAccess } = useSubscription(user?.id);
+
   const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [nextSyncIn, setNextSyncIn] = useState(AUTO_SYNC_INTERVAL / 1000);
 
-  // Create current prices map from live metal prices
+  // Helper: admin has full access, otherwise check subscription
+  const canAccess = (feature?: string, metal?: string): boolean => {
+    if (isAdmin) return true;
+    if (!user) return false;
+    return hasAccess(metal, feature);
+  };
+
   const currentPrices: Record<string, number> = {};
   metals.forEach(metal => {
     currentPrices[metal.metal] = metal.pricePerGram;
   });
 
-  // Pass current prices to hooks for consistency
   const { analysis: marketAnalysis, isLoading: marketLoading, refetch: refetchMarketAnalysis } = useMarketAnalysis(selectedMetal);
   const { recommendations, isLoading: recsLoading, refetch: refetchRecommendations } = useAIRecommendations(currentPrices);
   const { suggestions, isLoading: suggestionsLoading, refetch: refetchSuggestions } = useBuySellSuggestions(currentPrices);
 
-  // Sync all data across dashboard
   const syncAllData = useCallback(async () => {
     setIsRefreshing(true);
     try {
       await refetch();
-      // Wait a bit for prices to update, then refresh dependent data
       setTimeout(async () => {
-        await Promise.all([
-          refetchRecommendations(),
-          refetchSuggestions(),
-          refetchMarketAnalysis()
-        ]);
+        await Promise.all([refetchRecommendations(), refetchSuggestions(), refetchMarketAnalysis()]);
         toast.success("All prices synced across dashboard");
       }, 500);
-    } catch (err) {
+    } catch {
       toast.error("Failed to sync prices");
     } finally {
       setTimeout(() => setIsRefreshing(false), 1000);
     }
   }, [refetch, refetchRecommendations, refetchSuggestions, refetchMarketAnalysis]);
 
-  // Auto-sync timer
   useEffect(() => {
     if (!autoSyncEnabled) return;
-
     const syncInterval = setInterval(() => {
       syncAllData();
       setNextSyncIn(AUTO_SYNC_INTERVAL / 1000);
     }, AUTO_SYNC_INTERVAL);
-
     const countdownInterval = setInterval(() => {
       setNextSyncIn(prev => Math.max(0, prev - 1));
     }, 1000);
-
-    return () => {
-      clearInterval(syncInterval);
-      clearInterval(countdownInterval);
-    };
+    return () => { clearInterval(syncInterval); clearInterval(countdownInterval); };
   }, [autoSyncEnabled, syncAllData]);
-
-  // Note: Removed auto-refresh on price change to prevent continuous blinking
-  // Prices are synced via manual refresh or auto-sync timer
 
   const handleRefresh = async () => {
     await syncAllData();
@@ -100,11 +96,8 @@ const Index = () => {
     toast.info(autoSyncEnabled ? "Auto-sync disabled" : "Auto-sync enabled");
   };
 
-  // Create base prices map for city rates table
   const basePrices: Record<string, number> = {};
-  metals.forEach(metal => {
-    basePrices[metal.metal] = metal.pricePerGram;
-  });
+  metals.forEach(metal => { basePrices[metal.metal] = metal.pricePerGram; });
 
   const formatNextSync = () => {
     const mins = Math.floor(nextSyncIn / 60);
@@ -112,15 +105,42 @@ const Index = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-    return (
+  return (
     <div className="min-h-screen bg-background">
-      <Header 
+      <Header
         lastUpdate={lastUpdate}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
 
-      {/* AI Prediction Ticker - Single line at top */}
+      {/* Auth status bar */}
+      {!authLoading && !user && (
+        <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
+          <div className="container mx-auto flex items-center justify-between">
+            <span className="text-sm text-foreground">Sign in to unlock premium predictions & analytics</span>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => navigate("/auth")}>
+                <LogIn className="w-3 h-3 mr-1" /> Sign In
+              </Button>
+              <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
+                <Crown className="w-3 h-3 mr-1" /> View Plans
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {user && !isAdmin && !activeSubscription && (
+        <div className="bg-warning/10 border-b border-warning/20 px-4 py-2">
+          <div className="container mx-auto flex items-center justify-between">
+            <span className="text-sm text-foreground">You're on the free tier. Upgrade for full access.</span>
+            <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
+              <Crown className="w-3 h-3 mr-1" /> Upgrade
+            </Button>
+          </div>
+        </div>
+      )}
+
       <PredictionTicker />
 
       <main className="container mx-auto px-4 py-8">
@@ -128,33 +148,26 @@ const Index = () => {
         <div className="mb-4 flex items-center justify-between bg-card border border-border rounded-lg px-4 py-2">
           <div className="flex items-center gap-3">
             <RefreshCw className={`h-4 w-4 ${autoSyncEnabled ? 'text-success animate-spin-slow' : 'text-muted-foreground'}`} />
-            <span className="text-sm text-muted-foreground">
-              Auto Price Sync: 
-            </span>
-            <Badge 
-              variant={autoSyncEnabled ? "default" : "secondary"} 
-              className="cursor-pointer"
-              onClick={toggleAutoSync}
-            >
+            <span className="text-sm text-muted-foreground">Auto Price Sync:</span>
+            <Badge variant={autoSyncEnabled ? "default" : "secondary"} className="cursor-pointer" onClick={toggleAutoSync}>
               {autoSyncEnabled ? 'ON' : 'OFF'}
             </Badge>
           </div>
           {autoSyncEnabled && (
-            <span className="text-xs text-muted-foreground">
-              Next sync in: {formatNextSync()}
-            </span>
+            <span className="text-xs text-muted-foreground">Next sync in: {formatNextSync()}</span>
           )}
         </div>
 
-        {/* Today's Best Investment Plan */}
-        <TodayInvestmentPlan />
+        {/* Today's Best Investment Plan - Premium */}
+        <SubscriptionGate hasAccess={canAccess("investment_plan")} featureName="Investment Plan">
+          <TodayInvestmentPlan />
+        </SubscriptionGate>
 
-        {/* Market News Section - Moved to top with faster scroll */}
-        <div className="mb-8">
+        {/* Market News - Free */}
+        <div className="mb-8 mt-8">
           <MarketNews />
         </div>
 
-        {/* Error Alert */}
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -162,12 +175,10 @@ const Index = () => {
           </Alert>
         )}
 
-        {/* Metal Price Cards - Now 6 cards including Diamond */}
+        {/* Metal Price Cards - Free (basic view) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-lg" />
-            ))
+            Array.from({ length: 6 }).map((_, i) => (<Skeleton key={i} className="h-40 rounded-lg" />))
           ) : (
             metals.map((metal) => (
               <div key={metal.metal} onClick={() => setSelectedMetal(metal.metal)} className="cursor-pointer">
@@ -177,80 +188,84 @@ const Index = () => {
           )}
         </div>
 
-        {/* Multi-Source Rate Verification */}
-        <div className="mb-8">
-          <RateComparison />
-        </div>
+        {/* Rate Comparison - Premium */}
+        <SubscriptionGate hasAccess={canAccess("market_analysis")} featureName="Rate Comparison">
+          <div className="mb-8">
+            <RateComparison />
+          </div>
+        </SubscriptionGate>
 
-        {/* AI Recommendations - Flash Scrolling Section */}
-        <div className="mb-8">
-          {recsLoading ? (
-            <Skeleton className="h-64 rounded-lg" />
-          ) : (
-            <AIRecommendations recommendations={recommendations} />
-          )}
-        </div>
+        {/* AI Recommendations - Premium */}
+        <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
+          <div className="mb-8">
+            {recsLoading ? (
+              <Skeleton className="h-64 rounded-lg" />
+            ) : (
+              <AIRecommendations recommendations={recommendations} />
+            )}
+          </div>
+        </SubscriptionGate>
 
-        {/* AI Buy/Sell Timing Suggestions */}
-        <div className="mb-8">
-          <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
-        </div>
+        {/* Buy/Sell Timing - Premium */}
+        <SubscriptionGate hasAccess={canAccess("buy_sell_timing")} featureName="Buy/Sell Timing">
+          <div className="mb-8">
+            <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
+          </div>
+        </SubscriptionGate>
 
-        {/* 365-Day Prediction Section */}
-        <div className="mb-8">
-          <YearlyPrediction />
-        </div>
+        {/* 365-Day Prediction - Premium */}
+        <SubscriptionGate hasAccess={canAccess("predictions")} featureName="365-Day Predictions">
+          <div className="mb-8">
+            <YearlyPrediction />
+          </div>
+        </SubscriptionGate>
 
-        {/* City/Region Wise Rates Table */}
-        <div className="mb-8">
-          <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
-        </div>
+        {/* City Rates - Premium */}
+        <SubscriptionGate hasAccess={canAccess("city_rates")} featureName="City-wise Rates">
+          <div className="mb-8">
+            <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
+          </div>
+        </SubscriptionGate>
 
-        {/* Historical Price Comparison Chart */}
-        <div className="mb-8">
-          <HistoricalComparisonChart />
-        </div>
+        {/* Historical Charts - Premium */}
+        <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Charts">
+          <div className="mb-8">
+            <HistoricalComparisonChart />
+          </div>
+        </SubscriptionGate>
 
-        {/* Historical Data Table with Reinforcement Learning */}
-        <div className="mb-8">
-          <HistoricalDataTable />
-        </div>
+        <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Data">
+          <div className="mb-8">
+            <HistoricalDataTable />
+          </div>
+        </SubscriptionGate>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="technical" className="space-y-6">
-          <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 bg-card border border-border">
-            <TabsTrigger value="technical">Technical</TabsTrigger>
-            <TabsTrigger value="alerts">Alerts</TabsTrigger>
-            <TabsTrigger value="tools">Tools</TabsTrigger>
-          </TabsList>
+        {/* Technical & Alerts Tabs - Premium */}
+        <SubscriptionGate hasAccess={canAccess("technical_indicators")} featureName="Technical Analysis">
+          <Tabs defaultValue="technical" className="space-y-6">
+            <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 bg-card border border-border">
+              <TabsTrigger value="technical">Technical</TabsTrigger>
+              <TabsTrigger value="alerts">Alerts</TabsTrigger>
+              <TabsTrigger value="tools">Tools</TabsTrigger>
+            </TabsList>
+            <TabsContent value="technical" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <TechnicalIndicators metal={selectedMetal} />
+                <MarketAnalysisCard analysis={marketAnalysis} isLoading={marketLoading} onRefresh={refetchMarketAnalysis} />
+              </div>
+            </TabsContent>
+            <TabsContent value="alerts" className="space-y-6">
+              <AlertConfiguration />
+            </TabsContent>
+            <TabsContent value="tools" className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                <MarketAnalysisCard analysis={marketAnalysis} isLoading={marketLoading} onRefresh={refetchMarketAnalysis} />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </SubscriptionGate>
 
-          <TabsContent value="technical" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TechnicalIndicators metal={selectedMetal} />
-              <MarketAnalysisCard 
-                analysis={marketAnalysis} 
-                isLoading={marketLoading}
-                onRefresh={refetchMarketAnalysis}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="alerts" className="space-y-6">
-            <AlertConfiguration />
-          </TabsContent>
-
-          <TabsContent value="tools" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6">
-              <MarketAnalysisCard 
-                analysis={marketAnalysis} 
-                isLoading={marketLoading}
-                onRefresh={refetchMarketAnalysis}
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Footer Info */}
+        {/* Footer */}
         <div className="mt-12 p-6 bg-gradient-card border-2 border-border rounded-lg">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div>

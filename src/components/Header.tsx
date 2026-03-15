@@ -1,12 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, RefreshCw, Activity, Zap, Trash2 } from "lucide-react";
+import { Sparkles, RefreshCw, Activity, Zap, Trash2, LogIn, LogOut, Crown, Settings } from "lucide-react";
 import { useCurrency, CURRENCY_SYMBOLS } from "@/contexts/CurrencyContext";
 import { useCity, INDIAN_CITIES } from "@/contexts/CityContext";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   lastUpdate?: Date;
@@ -19,33 +21,33 @@ interface HeaderProps {
 export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefresh = true, onFullRefresh }: HeaderProps) => {
   const { currency, setCurrency } = useCurrency();
   const { selectedCity, setSelectedCity, getCityLabel } = useCity();
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
   const [isFullRefreshing, setIsFullRefreshing] = useState(false);
 
   const handleFullRefresh = async () => {
     setIsFullRefreshing(true);
     toast.info("Starting full data refresh for all metals...");
-    
     try {
-      // Call the daily-rates-refresh edge function
-      const { data, error } = await supabase.functions.invoke('daily-rates-refresh', {
-        body: {}
-      });
-
+      const { error } = await supabase.functions.invoke('daily-rates-refresh', { body: {} });
       if (error) {
-        console.error('Full refresh error:', error);
         toast.error("Full refresh failed. Please try again.");
       } else {
         toast.success("Full refresh completed! All rates and predictions updated.");
-        // Trigger the parent refresh to update UI
         if (onFullRefresh) onFullRefresh();
         if (onRefresh) onRefresh();
       }
-    } catch (err) {
-      console.error('Full refresh error:', err);
-      toast.error("Full refresh failed. This may take a while - check back in a few minutes.");
+    } catch {
+      toast.error("Full refresh failed.");
     } finally {
       setIsFullRefreshing(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Signed out");
+    navigate("/");
   };
 
   return (
@@ -68,76 +70,68 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
               <span className="text-xs">{getCityLabel(selectedCity)} Rates - {currency} per gram</span>
             </Badge>
 
-            {/* Currency Selector */}
             <Select value={currency} onValueChange={setCurrency}>
               <SelectTrigger className="w-[120px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.keys(CURRENCY_SYMBOLS).map((curr) => (
-                  <SelectItem key={curr} value={curr}>
-                    {CURRENCY_SYMBOLS[curr]} {curr}
-                  </SelectItem>
+                  <SelectItem key={curr} value={curr}>{CURRENCY_SYMBOLS[curr]} {curr}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* City Selector */}
             <Select value={selectedCity} onValueChange={setSelectedCity}>
               <SelectTrigger className="w-[140px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {INDIAN_CITIES.map((city) => (
-                  <SelectItem key={city.value} value={city.value}>
-                    {city.label}
-                  </SelectItem>
+                  <SelectItem key={city.value} value={city.value}>{city.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {showRefresh && (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    localStorage.clear();
-                    toast.success("Cache cleared! Fetching fresh data...");
-                    if (onRefresh) onRefresh();
-                  }}
-                  title="Clear cached data"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Clear Cache
+                <Button variant="outline" size="sm" onClick={() => { localStorage.clear(); toast.success("Cache cleared!"); if (onRefresh) onRefresh(); }} title="Clear cached data">
+                  <Trash2 className="w-4 h-4 mr-2" />Clear Cache
                 </Button>
                 {onRefresh && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={onRefresh}
-                    disabled={isRefreshing}
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    Refresh
+                  <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Refresh
                   </Button>
                 )}
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={handleFullRefresh}
-                  disabled={isFullRefreshing}
-                  className="bg-gradient-primary"
-                >
+                <Button variant="default" size="sm" onClick={handleFullRefresh} disabled={isFullRefreshing} className="bg-gradient-primary">
                   <Zap className={`w-4 h-4 mr-2 ${isFullRefreshing ? 'animate-pulse' : ''}`} />
                   {isFullRefreshing ? 'Refreshing...' : 'Full Refresh'}
                 </Button>
                 {lastUpdate && (
-                  <span className="text-xs text-muted-foreground">
-                    Updated {lastUpdate.toLocaleTimeString()}
-                  </span>
+                  <span className="text-xs text-muted-foreground">Updated {lastUpdate.toLocaleTimeString()}</span>
                 )}
               </>
+            )}
+
+            {/* Auth Controls */}
+            {user ? (
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
+                    <Settings className="w-4 h-4 mr-1" /> Admin
+                  </Button>
+                )}
+                <Badge variant="outline" className="text-xs">
+                  {user.email?.split("@")[0]}
+                  {isAdmin && <Crown className="w-3 h-3 ml-1 text-warning" />}
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
+                <LogIn className="w-4 h-4 mr-1" /> Sign In
+              </Button>
             )}
           </div>
         </div>
