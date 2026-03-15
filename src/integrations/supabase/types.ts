@@ -233,6 +233,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_days: number
+          features_included: Json
+          id: string
+          is_active: boolean
+          metals_included: Json
+          name: string
+          price_inr: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_days: number
+          features_included?: Json
+          id?: string
+          is_active?: boolean
+          metals_included?: Json
+          name: string
+          price_inr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_days?: number
+          features_included?: Json
+          id?: string
+          is_active?: boolean
+          metals_included?: Json
+          name?: string
+          price_inr?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -251,6 +293,86 @@ export type Database = {
           id?: string
           role?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          expires_at: string
+          id: string
+          plan_id: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          created_at?: string
+          expires_at: string
+          id?: string
+          plan_id: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          plan_id?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visitor_analytics: {
+        Row: {
+          device_type: string | null
+          id: string
+          ip_country: string | null
+          page_visited: string
+          session_id: string | null
+          user_id: string | null
+          visited_at: string
+        }
+        Insert: {
+          device_type?: string | null
+          id?: string
+          ip_country?: string | null
+          page_visited?: string
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
+        }
+        Update: {
+          device_type?: string | null
+          id?: string
+          ip_country?: string | null
+          page_visited?: string
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
         }
         Relationships: []
       }
