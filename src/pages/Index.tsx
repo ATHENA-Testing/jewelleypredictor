@@ -130,10 +130,21 @@ const Index = () => {
         </div>
       )}
 
+      {user && !isAdmin && activeSubscription?.subscription_plans?.name === 'Free Trial' && (
+        <div className="bg-success/10 border-b border-success/20 px-4 py-2">
+          <div className="container mx-auto flex items-center justify-between">
+            <span className="text-sm text-foreground">🎉 You have a 3-day free trial! Expires {new Date(activeSubscription.expires_at).toLocaleDateString()}</span>
+            <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
+              <Crown className="w-3 h-3 mr-1" /> View Plans
+            </Button>
+          </div>
+        </div>
+      )}
+
       {user && !isAdmin && !activeSubscription && (
         <div className="bg-warning/10 border-b border-warning/20 px-4 py-2">
           <div className="container mx-auto flex items-center justify-between">
-            <span className="text-sm text-foreground">You're on the free tier. Upgrade for full access.</span>
+            <span className="text-sm text-foreground">Your free trial has expired. Upgrade for full access.</span>
             <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
               <Crown className="w-3 h-3 mr-1" /> Upgrade
             </Button>
