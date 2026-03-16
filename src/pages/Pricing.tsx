@@ -1,17 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useRazorpay } from "@/hooks/useRazorpay";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Sparkles, ArrowLeft } from "lucide-react";
+import { Check, Crown, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { plans, activeSubscription } = useSubscription(user?.id);
+  const { plans, activeSubscription, refetch } = useSubscription(user?.id);
+  const { initiatePayment, isProcessing } = useRazorpay();
 
   const weeklyPlans = plans.filter(p => p.duration_days === 7);
   const monthlyPlans = plans.filter(p => p.duration_days === 30);
@@ -23,8 +25,15 @@ const Pricing = () => {
       navigate("/auth");
       return;
     }
-    // Razorpay integration will be added in Phase 2
-    toast.info(`Razorpay payment gateway integration coming soon for "${plan.name}" plan (₹${plan.price_inr})`);
+    initiatePayment(
+      plan.id,
+      user.email || "",
+      user.user_metadata?.full_name || "",
+      () => {
+        refetch();
+        setTimeout(() => navigate("/"), 1500);
+      }
+    );
   };
 
   const renderPlanCard = (plan: typeof plans[0], featured = false) => (
@@ -70,9 +79,15 @@ const Pricing = () => {
         <Button
           className="w-full bg-gradient-primary"
           onClick={() => handleSubscribe(plan)}
-          disabled={activeSubscription?.plan_id === plan.id}
+          disabled={activeSubscription?.plan_id === plan.id || isProcessing}
         >
-          {activeSubscription?.plan_id === plan.id ? "Active" : "Subscribe Now"}
+          {activeSubscription?.plan_id === plan.id ? (
+            "Active"
+          ) : isProcessing ? (
+            <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Processing...</>
+          ) : (
+            "Subscribe Now"
+          )}
         </Button>
       </CardContent>
     </Card>
