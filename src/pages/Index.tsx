@@ -15,7 +15,7 @@ import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, RefreshCw, LogIn, Crown } from "lucide-react";
+import { AlertCircle, RefreshCw, Crown } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
@@ -86,6 +86,12 @@ const Index = () => {
     return () => { clearInterval(syncInterval); clearInterval(countdownInterval); };
   }, [autoSyncEnabled, syncAllData]);
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
   const handleRefresh = async () => {
     await syncAllData();
     setNextSyncIn(AUTO_SYNC_INTERVAL / 1000);
@@ -105,6 +111,10 @@ const Index = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (authLoading || !user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header
@@ -112,23 +122,6 @@ const Index = () => {
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
       />
-
-      {/* Auth status bar */}
-      {!authLoading && !user && (
-        <div className="bg-primary/10 border-b border-primary/20 px-4 py-2">
-          <div className="container mx-auto flex items-center justify-between">
-            <span className="text-sm text-foreground">Sign in to unlock premium predictions & analytics</span>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => navigate("/auth")}>
-                <LogIn className="w-3 h-3 mr-1" /> Sign In
-              </Button>
-              <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
-                <Crown className="w-3 h-3 mr-1" /> View Plans
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {user && !isAdmin && activeSubscription?.subscription_plans?.name === 'Free Trial' && (
         <div className="bg-success/10 border-b border-success/20 px-4 py-2">

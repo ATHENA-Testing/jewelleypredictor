@@ -31,7 +31,7 @@ const Pricing = () => {
       user.user_metadata?.full_name || "",
       () => {
         refetch();
-        setTimeout(() => navigate("/"), 1500);
+        setTimeout(() => navigate("/dashboard"), 1500);
       }
     );
   };
@@ -96,7 +96,7 @@ const Pricing = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Button variant="ghost" onClick={() => navigate("/")} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Button>
 
