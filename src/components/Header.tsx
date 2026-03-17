@@ -47,7 +47,7 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
   const handleSignOut = async () => {
     await signOut();
     toast.success("Signed out");
-    navigate("/");
+    navigate("/auth");
   };
 
   return (
