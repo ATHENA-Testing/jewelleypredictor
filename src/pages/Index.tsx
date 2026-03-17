@@ -111,6 +111,10 @@ const Index = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (authLoading || !user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header
