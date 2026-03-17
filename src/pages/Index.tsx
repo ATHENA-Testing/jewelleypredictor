@@ -86,6 +86,12 @@ const Index = () => {
     return () => { clearInterval(syncInterval); clearInterval(countdownInterval); };
   }, [autoSyncEnabled, syncAllData]);
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
+
   const handleRefresh = async () => {
     await syncAllData();
     setNextSyncIn(AUTO_SYNC_INTERVAL / 1000);
