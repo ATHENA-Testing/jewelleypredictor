@@ -31,7 +31,7 @@ const Pricing = () => {
       user.user_metadata?.full_name || "",
       () => {
         refetch();
-        setTimeout(() => navigate("/"), 1500);
+        setTimeout(() => navigate("/dashboard"), 1500);
       }
     );
   };
