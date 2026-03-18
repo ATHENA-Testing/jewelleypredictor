@@ -162,16 +162,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Today's Best Investment Plan - Premium */}
-        <SubscriptionGate hasAccess={canAccess("investment_plan")} featureName="Investment Plan">
-          <TodayInvestmentPlan />
-        </SubscriptionGate>
-
-        {/* Market News - Free */}
-        <div className="mb-8 mt-8">
-          <MarketNews />
-        </div>
-
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -179,7 +169,7 @@ const Index = () => {
           </Alert>
         )}
 
-        {/* Metal Price Cards - Free (basic view) */}
+        {/* 1. Metal Price Cards - Free (most important, first thing users see) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (<Skeleton key={i} className="h-40 rounded-lg" />))
@@ -192,14 +182,7 @@ const Index = () => {
           )}
         </div>
 
-        {/* Rate Comparison - Premium */}
-        <SubscriptionGate hasAccess={canAccess("market_analysis")} featureName="Rate Comparison">
-          <div className="mb-8">
-            <RateComparison />
-          </div>
-        </SubscriptionGate>
-
-        {/* AI Recommendations - Premium */}
+        {/* 2. AI Recommendations - High-value actionable insight */}
         <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
           <div className="mb-8">
             {recsLoading ? (
@@ -210,28 +193,47 @@ const Index = () => {
           </div>
         </SubscriptionGate>
 
-        {/* Buy/Sell Timing - Premium */}
+        {/* 3. Buy/Sell Timing - Actionable trading signals */}
         <SubscriptionGate hasAccess={canAccess("buy_sell_timing")} featureName="Buy/Sell Timing">
           <div className="mb-8">
             <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
           </div>
         </SubscriptionGate>
 
-        {/* 365-Day Prediction - Premium */}
+        {/* 4. Today's Investment Plan - Daily actionable plan */}
+        <SubscriptionGate hasAccess={canAccess("investment_plan")} featureName="Investment Plan">
+          <div className="mb-8">
+            <TodayInvestmentPlan />
+          </div>
+        </SubscriptionGate>
+
+        {/* 5. 365-Day Predictions - Long-term forecasting */}
         <SubscriptionGate hasAccess={canAccess("predictions")} featureName="365-Day Predictions">
           <div className="mb-8">
             <YearlyPrediction />
           </div>
         </SubscriptionGate>
 
-        {/* City Rates - Premium */}
+        {/* 6. Market News - Free context/awareness */}
+        <div className="mb-8">
+          <MarketNews />
+        </div>
+
+        {/* 7. Rate Comparison - Compare across sources */}
+        <SubscriptionGate hasAccess={canAccess("market_analysis")} featureName="Rate Comparison">
+          <div className="mb-8">
+            <RateComparison />
+          </div>
+        </SubscriptionGate>
+
+        {/* 8. City-wise Rates */}
         <SubscriptionGate hasAccess={canAccess("city_rates")} featureName="City-wise Rates">
           <div className="mb-8">
             <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
           </div>
         </SubscriptionGate>
 
-        {/* Historical Charts - Premium */}
+        {/* 9. Historical Charts & Data */}
         <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Charts">
           <div className="mb-8">
             <HistoricalComparisonChart />
@@ -244,7 +246,7 @@ const Index = () => {
           </div>
         </SubscriptionGate>
 
-        {/* Technical & Alerts Tabs - Premium */}
+        {/* 10. Technical Analysis & Alerts */}
         <SubscriptionGate hasAccess={canAccess("technical_indicators")} featureName="Technical Analysis">
           <Tabs defaultValue="technical" className="space-y-6">
             <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 bg-card border border-border">
