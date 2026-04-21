@@ -15,7 +15,8 @@ import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, RefreshCw, Crown } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
@@ -148,6 +149,70 @@ const Index = () => {
       <PredictionTicker />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Welcome / Value strip */}
+        <Card className="mb-6 border-border bg-gradient-to-br from-primary/5 via-card to-warning/5 overflow-hidden">
+          <CardContent className="p-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="p-2.5 bg-gradient-primary rounded-lg shrink-0">
+                  <Sparkles className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-bold text-foreground">
+                    Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""} 👋
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Your AI-powered jewellery market intelligence — live prices, predictions & smart trade signals.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:flex md:items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/10 border border-success/20">
+                  <TrendingUp className="w-4 h-4 text-success" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground leading-none">Accuracy</p>
+                    <p className="text-sm font-bold text-success">98.5%</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground leading-none">AI Signals</p>
+                    <p className="text-sm font-bold text-primary">Live</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/20">
+                  <Target className="w-4 h-4 text-warning" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground leading-none">Forecast</p>
+                    <p className="text-sm font-bold text-warning">365d</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border">
+                  <ShieldCheck className="w-4 h-4 text-foreground" />
+                  <div>
+                    <p className="text-[10px] text-muted-foreground leading-none">Metals</p>
+                    <p className="text-sm font-bold text-foreground">{metals.length || 6}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {!isAdmin && !activeSubscription && (
+              <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Zap className="w-4 h-4 text-warning shrink-0" />
+                  <p className="text-xs text-foreground truncate">
+                    Unlock AI Recommendations, Predictions & Trade Signals
+                  </p>
+                </div>
+                <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary shrink-0">
+                  <Crown className="w-3.5 h-3.5 mr-1" /> Upgrade
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Auto-Sync Status Bar */}
         <div className="mb-4 flex items-center justify-between bg-card border border-border rounded-lg px-4 py-2">
           <div className="flex items-center gap-3">

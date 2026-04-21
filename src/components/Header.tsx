@@ -51,7 +51,7 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
   };
 
   return (
-    <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-border bg-card/50 backdrop-blur-sm relative z-10">
       <div className="container mx-auto px-4 py-4">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex items-center gap-3">
