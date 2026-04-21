@@ -19,16 +19,26 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fetch recent historical data
+    // Pull broader historical context (last 60 days) and the latest live price
     const { data: recentData } = await supabaseClient
       .from('metal_prices_history')
       .select('*')
       .eq('metal', metal)
-      .gte('recorded_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('recorded_at', new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString())
       .order('recorded_at', { ascending: false })
-      .limit(7);
+      .limit(60);
 
-    // Call Lovable AI for market analysis
+    const { data: manualLatest } = await supabaseClient
+      .from('manual_market_rates')
+      .select('price_per_gram, updated_at')
+      .eq('metal', metal)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const livePrice = manualLatest?.price_per_gram ?? recentData?.[0]?.price_per_gram ?? null;
+
+    // Call Lovable AI for market analysis using a top-tier reasoning model
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -36,17 +46,20 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
+        reasoning: { effort: 'high' },
         messages: [
           {
             role: 'system',
-            content: `You are an expert precious metals market analyst. Provide comprehensive market analysis for ${metal} based on recent trends, global economic factors, and technical indicators.`
+            content: `You are a senior precious metals market strategist for the Indian market. Always anchor your analysis on the latest live price plus the full 60-day historical evolution provided.`
           },
           {
             role: 'user',
-            content: `Provide a detailed market analysis for ${metal}:
+            content: `Provide a detailed market analysis for ${metal} (Indian market, INR/gram):
 
-Recent Price Data (last 7 days):
+LIVE CURRENT PRICE: ${livePrice !== null ? `₹${Number(livePrice).toFixed(2)}` : 'unavailable'} (source: ${manualLatest ? 'admin override' : 'latest history tick'})
+
+Historical Price Data (last 60 days, newest first):
 ${JSON.stringify(recentData, null, 2)}
 
 Include:
@@ -71,8 +84,8 @@ Format as JSON:
 }`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1500
+        temperature: 0.4,
+        max_tokens: 3000
       }),
     });
 
