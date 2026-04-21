@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Lock, Crown } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Lock, Crown, Sparkles } from "lucide-react";
 
 interface SubscriptionGateProps {
   children: React.ReactNode;
@@ -14,23 +15,26 @@ export const SubscriptionGate = ({ children, hasAccess, featureName }: Subscript
   if (hasAccess) return <>{children}</>;
 
   return (
-    <div className="relative">
-      <div className="filter blur-sm pointer-events-none select-none opacity-40">
-        {children}
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-lg">
-        <div className="text-center space-y-3 p-4">
-          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full">
-            <Lock className="w-6 h-6 text-primary" />
+    <Card className="border-border/60 bg-gradient-to-br from-card to-muted/30">
+      <CardContent className="p-5 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2.5 bg-primary/10 rounded-lg shrink-0">
+            <Lock className="w-5 h-5 text-primary" />
           </div>
-          <p className="text-sm font-medium text-foreground">
-            {featureName ? `${featureName} is a premium feature` : "Premium Feature"}
-          </p>
-          <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary">
-            <Crown className="w-3 h-3 mr-1" /> Upgrade Plan
-          </Button>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              {featureName || "Premium Feature"}
+              <Sparkles className="w-3.5 h-3.5 text-warning" />
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              Upgrade your plan to unlock this feature
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+        <Button size="sm" onClick={() => navigate("/pricing")} className="bg-gradient-primary shrink-0">
+          <Crown className="w-3.5 h-3.5 mr-1" /> Upgrade
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
