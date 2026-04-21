@@ -381,6 +381,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_revenue_summary: {
+        Args: never
+        Returns: {
+          active_paid: number
+          active_trials: number
+          expired_users: number
+          plan_name: string
+          plan_revenue: number
+          plan_subscribers: number
+          revenue_30d: number
+          total_revenue: number
+          total_users: number
+        }[]
+      }
+      admin_get_user_activity: {
+        Args: never
+        Returns: {
+          amount_paid: number
+          days_remaining: number
+          email: string
+          expires_at: string
+          full_name: string
+          is_active: boolean
+          is_trial: boolean
+          plan_name: string
+          plan_price: number
+          role: string
+          signed_up_at: string
+          starts_at: string
+          subscription_status: string
+          user_id: string
+        }[]
+      }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
     }
     Enums: {
