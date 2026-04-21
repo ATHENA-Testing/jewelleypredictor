@@ -19,12 +19,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fetch historical data for the metal (last 30 days)
+    // Fetch extended historical data (last 90 days) for richer pattern detection
     const { data: historicalData, error: historyError } = await supabaseClient
       .from('metal_prices_history')
       .select('*')
       .eq('metal', metal)
-      .gte('recorded_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('recorded_at', new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
       .order('recorded_at', { ascending: true });
 
     if (historyError) throw historyError;
@@ -36,6 +36,32 @@ serve(async (req) => {
       );
     }
 
+    // Always pull the absolute latest live price (admin override > most recent history)
+    const { data: manualLatest } = await supabaseClient
+      .from('manual_market_rates')
+      .select('price_per_gram, updated_at')
+      .eq('metal', metal)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: lastTick } = await supabaseClient
+      .from('metal_prices_history')
+      .select('price_per_gram, recorded_at, change_percent')
+      .eq('metal', metal)
+      .order('recorded_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Prior accuracy feedback (reinforcement learning context)
+    const { data: learnings } = await supabaseClient
+      .from('prediction_learnings')
+      .select('prediction_date, predicted_price, actual_price, accuracy_percentage')
+      .eq('metal', metal)
+      .not('actual_price', 'is', null)
+      .order('prediction_date', { ascending: false })
+      .limit(20);
+
     // Prepare data for AI analysis
     const priceData = historicalData.map(d => ({
       date: d.recorded_at,
@@ -43,7 +69,8 @@ serve(async (req) => {
       change: d.change_percent
     }));
 
-    const currentPrice = priceData[priceData.length - 1].price;
+    const liveLatest = manualLatest?.price_per_gram ?? lastTick?.price_per_gram ?? priceData[priceData.length - 1].price;
+    const currentPrice = liveLatest;
     const avgChange = priceData.reduce((sum, d) => sum + (d.change || 0), 0) / priceData.length;
     const volatility = Math.sqrt(
       priceData.reduce((sum, d) => sum + Math.pow((d.change || 0) - avgChange, 2), 0) / priceData.length
@@ -57,34 +84,30 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
+        reasoning: { effort: 'high' },
         messages: [
           {
             role: 'system',
-            content: `You are an expert precious metals market analyst specializing in ${metal}. Analyze historical price data and provide accurate predictions with reasoning based on market trends, technical indicators, and economic factors.`
+            content: `You are a top-tier quantitative precious metals analyst specializing in the Indian ${metal} market. Combine current live spot rates with full historical price evolution to deliver expert-grade forecasts.`
           },
           {
             role: 'user',
-            content: `You are an expert precious metals market analyst with access to comprehensive historical data and market intelligence. You use advanced machine learning techniques including supervised learning, ensemble methods, and reinforcement learning.
+            content: `You are an expert precious metals market analyst using advanced ML techniques (supervised learning, ensemble methods, reinforcement learning) on the most recent live data plus 90 days of historical evolution.
 
-REINFORCEMENT LEARNING APPROACH:
-- Analyze prediction accuracy from historical data
-- Learn from prediction vs. actual price differences
-- Continuously improve future forecasts based on past performance
-- Adjust confidence intervals based on historical accuracy
-- Apply ensemble methods to combine multiple prediction models
+REINFORCEMENT LEARNING FEEDBACK (past prediction vs actual):
+${JSON.stringify(learnings ?? [], null, 2)}
 
-Analyze the following data for ${metal} and provide 10-day price predictions:
+FULL 90-DAY HISTORICAL DATA for ${metal} (${priceData.length} points):
+${JSON.stringify(priceData, null, 2)}
 
-HISTORICAL DATA (Last ${priceData.length} days):
-${JSON.stringify(priceData.slice(-14), null, 2)}
-
-CURRENT MARKET CONDITIONS:
-- Current Price: ₹${currentPrice.toFixed(2)} per gram
-- Average Daily Change: ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(2)}%
-- Price Volatility: ${volatility.toFixed(2)}%
-- 30-Day Trend: ${priceData[priceData.length-1].price > priceData[0].price ? 'Upward' : 'Downward'}
-- Historical Prediction Accuracy: Learn from past predictions to improve future forecasts
+LATEST LIVE MARKET CONDITIONS (use as the anchor for Day 1 forecasts):
+- Live Current Price: ₹${currentPrice.toFixed(2)} per gram (source: ${manualLatest ? 'admin override' : 'latest history tick'})
+- Last Tick Recorded: ${lastTick?.recorded_at ?? 'n/a'}
+- Average Daily Change: ${avgChange > 0 ? '+' : ''}${avgChange.toFixed(3)}%
+- Realized Volatility: ${volatility.toFixed(3)}%
+- 90-Day Trend: ${priceData[priceData.length-1].price > priceData[0].price ? 'Upward' : 'Downward'}
+- Calibrate confidence using the prior-accuracy feedback above
 
 ANALYSIS REQUIREMENTS:
 1. Apply supervised learning on historical price patterns
@@ -115,8 +138,8 @@ Return ONLY a JSON object in this exact format:
 }`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 2000
+        temperature: 0.4,
+        max_tokens: 4000
       }),
     });
 
