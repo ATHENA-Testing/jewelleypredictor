@@ -138,16 +138,49 @@ When recommending the best time to buy/sell ornaments, find the lowest predicted
     }
 
     if (!aiResp) {
-      const status = lastErr?.status ?? 500;
-      const userMsg =
-        status === 402
-          ? "All AI models are out of credits. Please add credits in Settings → Workspace → Usage."
-          : status === 429
-          ? "All AI models are rate-limited right now. Please try again in a minute."
-          : "AI assistant is temporarily unavailable. Please try again shortly.";
-      return new Response(JSON.stringify({ error: userMsg }), {
-        status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // ── DETERMINISTIC FALLBACK ──
+      // All AI models failed (likely 402 credits). Compute a useful answer
+      // directly from manual rates + history + predictions so the user is never blocked.
+      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user")?.content ?? "";
+      const fallbackText = buildDeterministicAnswer(
+        String(lastUserMsg),
+        manualRates ?? [],
+        history ?? [],
+        predictions ?? [],
+        analysis ?? [],
+        istNow,
+      );
+
+      const note = lastErr?.status === 402
+        ? "_AI models are temporarily out of credits — showing data-driven analysis computed directly from live rates, history & predictions._"
+        : lastErr?.status === 429
+        ? "_AI models are rate-limited — showing data-driven analysis computed directly from live rates, history & predictions._"
+        : "_AI service unavailable — showing data-driven analysis computed directly from live rates, history & predictions._";
+
+      const fullText = `${note}\n\n${fallbackText}`;
+
+      // Stream as SSE so the client (which expects streaming) renders it identically
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start(controller) {
+          // chunk into ~40-char pieces for a smooth typing effect
+          const chunks = fullText.match(/[\s\S]{1,40}/g) ?? [fullText];
+          for (const c of chunks) {
+            const payload = { choices: [{ delta: { content: c } }] };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+          }
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "text/event-stream",
+          "X-Model-Used": "deterministic-fallback",
+          "X-Fallback-Reason": String(lastErr?.status ?? "unknown"),
+        },
       });
     }
 
