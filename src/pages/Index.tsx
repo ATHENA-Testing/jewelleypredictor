@@ -13,6 +13,7 @@ import { HistoricalDataTable } from "@/components/Dashboard/HistoricalDataTable"
 import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComparisonChart";
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
+import { AIAssistantChat } from "@/components/Dashboard/AIAssistantChat";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -264,6 +265,13 @@ const Index = () => {
             ))
           )}
         </div>
+
+        {/* AI Assistant Chat - Expert advisor grounded in live data */}
+        <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Assistant">
+          <div className="mb-8">
+            <AIAssistantChat />
+          </div>
+        </SubscriptionGate>
 
         {/* 2. AI Recommendations - High-value actionable insight */}
         <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
