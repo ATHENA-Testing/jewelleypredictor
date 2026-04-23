@@ -91,44 +91,72 @@ ${JSON.stringify(learnings ?? [], null, 2)}
 
 When recommending the best time to buy/sell ornaments, find the lowest predicted price (for buying) or highest (for selling) within the prediction window, give the exact date, the price, the difference vs today, and a 1-2 line reasoning. Always end with a "Sources" line if applicable.`;
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+    // Try multiple models in order, falling back when one is rate-limited or out of credits
+    const MODEL_FALLBACK_CHAIN: Array<{ model: string; reasoning?: { effort: string } }> = [
+      { model: "google/gemini-2.5-pro", reasoning: { effort: "medium" } },
+      { model: "google/gemini-2.5-flash", reasoning: { effort: "low" } },
+      { model: "google/gemini-2.5-flash-lite" },
+      { model: "openai/gpt-5-mini" },
+      { model: "openai/gpt-5-nano" },
+    ];
+
+    let aiResp: Response | null = null;
+    let usedModel = "";
+    let lastErr: { status: number; text: string } | null = null;
+
+    for (const cfg of MODEL_FALLBACK_CHAIN) {
+      const body: Record<string, unknown> = {
+        model: cfg.model,
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
         ],
         stream: true,
-        reasoning: { effort: "medium" },
         temperature: 0.4,
-      }),
-    });
+      };
+      if (cfg.reasoning) body.reasoning = cfg.reasoning;
 
-    if (!aiResp.ok) {
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit reached. Please try again in a minute." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (resp.ok) {
+        aiResp = resp;
+        usedModel = cfg.model;
+        console.log(`ai-metal-assistant: using model ${usedModel}`);
+        break;
       }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, t);
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+      const text = await resp.text();
+      lastErr = { status: resp.status, text };
+      console.warn(`Model ${cfg.model} failed (${resp.status}) — trying next. ${text.slice(0, 150)}`);
+    }
+
+    if (!aiResp) {
+      const status = lastErr?.status ?? 500;
+      const userMsg =
+        status === 402
+          ? "All AI models are out of credits. Please add credits in Settings → Workspace → Usage."
+          : status === 429
+          ? "All AI models are rate-limited right now. Please try again in a minute."
+          : "AI assistant is temporarily unavailable. Please try again shortly.";
+      return new Response(JSON.stringify({ error: userMsg }), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(aiResp.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "X-Model-Used": usedModel,
+      },
     });
   } catch (e) {
     console.error("ai-metal-assistant error:", e);
