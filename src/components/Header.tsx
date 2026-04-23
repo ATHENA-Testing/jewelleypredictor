@@ -1,13 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, RefreshCw, Activity, Zap, Trash2, LogIn, LogOut, Crown, Settings } from "lucide-react";
+import { Sparkles, Activity, LogIn, Settings, MapPin, Clock, Radio, ShieldCheck } from "lucide-react";
 import { useCurrency, CURRENCY_SYMBOLS } from "@/contexts/CurrencyContext";
 import { useCity, INDIAN_CITIES } from "@/contexts/CityContext";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
@@ -18,37 +15,13 @@ interface HeaderProps {
   onFullRefresh?: () => void;
 }
 
-export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefresh = true, onFullRefresh }: HeaderProps) => {
+export const Header = ({ lastUpdate, isRefreshing = false }: HeaderProps) => {
   const { currency, setCurrency } = useCurrency();
-  const { selectedCity, setSelectedCity, getCityLabel } = useCity();
-  const { user, isAdmin, signOut } = useAuth();
+  const { selectedCity, setSelectedCity, getCityLabel, isAutoDetected } = useCity();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [isFullRefreshing, setIsFullRefreshing] = useState(false);
 
-  const handleFullRefresh = async () => {
-    setIsFullRefreshing(true);
-    toast.info("Starting full data refresh for all metals...");
-    try {
-      const { error } = await supabase.functions.invoke('daily-rates-refresh', { body: {} });
-      if (error) {
-        toast.error("Full refresh failed. Please try again.");
-      } else {
-        toast.success("Full refresh completed! All rates and predictions updated.");
-        if (onFullRefresh) onFullRefresh();
-        if (onRefresh) onRefresh();
-      }
-    } catch {
-      toast.error("Full refresh failed.");
-    } finally {
-      setIsFullRefreshing(false);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    toast.success("Signed out");
-    navigate("/auth");
-  };
+  const formattedTime = lastUpdate ? lastUpdate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm relative z-10">
@@ -63,15 +36,29 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
               <p className="text-sm text-muted-foreground">AI-Powered Jewellery Rate Predictions</p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant="outline" className="flex items-center gap-2">
-              <Activity className="w-3 h-3 text-success animate-pulse" />
-              <span className="text-xs">{getCityLabel(selectedCity)} Rates - {currency} per gram</span>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Live status chip */}
+            <Badge variant="outline" className="flex items-center gap-1.5 py-1.5">
+              <Radio className={`w-3 h-3 text-success ${isRefreshing ? "animate-pulse" : ""}`} />
+              <span className="text-xs font-medium">Live Market</span>
             </Badge>
 
+            {/* Last updated chip */}
+            <Badge variant="outline" className="flex items-center gap-1.5 py-1.5">
+              <Clock className="w-3 h-3 text-primary" />
+              <span className="text-xs">Updated {formattedTime}</span>
+            </Badge>
+
+            {/* India scope chip */}
+            <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 py-1.5">
+              <Activity className="w-3 h-3 text-success" />
+              <span className="text-xs">{getCityLabel(selectedCity)} • {currency}/g</span>
+            </Badge>
+
+            {/* Currency selector */}
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="w-[120px] h-9">
+              <SelectTrigger className="w-[110px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -81,54 +68,43 @@ export const Header = ({ lastUpdate, isRefreshing = false, onRefresh, showRefres
               </SelectContent>
             </Select>
 
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger className="w-[140px] h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {INDIAN_CITIES.map((city) => (
-                  <SelectItem key={city.value} value={city.value}>{city.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* City selector with auto-detect indicator */}
+            <div className="relative">
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-[150px] h-9 pl-8">
+                  <MapPin className="w-3.5 h-3.5 text-primary absolute left-2.5" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INDIAN_CITIES.map((city) => (
+                    <SelectItem key={city.value} value={city.value}>{city.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isAutoDetected && (
+                <span
+                  className="absolute -top-1.5 -right-1.5 bg-success text-success-foreground text-[9px] px-1.5 py-0.5 rounded-full font-semibold leading-none"
+                  title="Auto-detected from your location"
+                >
+                  AUTO
+                </span>
+              )}
+            </div>
 
-            {showRefresh && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => { localStorage.clear(); toast.success("Cache cleared!"); if (onRefresh) onRefresh(); }} title="Clear cached data">
-                  <Trash2 className="w-4 h-4 mr-2" />Clear Cache
-                </Button>
-                {onRefresh && (
-                  <Button variant="outline" size="sm" onClick={onRefresh} disabled={isRefreshing}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />Refresh
-                  </Button>
-                )}
-                <Button variant="default" size="sm" onClick={handleFullRefresh} disabled={isFullRefreshing} className="bg-gradient-primary">
-                  <Zap className={`w-4 h-4 mr-2 ${isFullRefreshing ? 'animate-pulse' : ''}`} />
-                  {isFullRefreshing ? 'Refreshing...' : 'Full Refresh'}
-                </Button>
-                {lastUpdate && (
-                  <span className="text-xs text-muted-foreground">Updated {lastUpdate.toLocaleTimeString()}</span>
-                )}
-              </>
+            {/* Verified data chip */}
+            <Badge variant="outline" className="hidden md:flex items-center gap-1.5 py-1.5">
+              <ShieldCheck className="w-3 h-3 text-success" />
+              <span className="text-xs">Verified Sources</span>
+            </Badge>
+
+            {/* Admin entry */}
+            {user && isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
+                <Settings className="w-4 h-4 mr-1" /> Admin
+              </Button>
             )}
 
-            {/* Auth Controls */}
-            {user ? (
-              <div className="flex items-center gap-2">
-                {isAdmin && (
-                  <Button variant="outline" size="sm" onClick={() => navigate("/admin")}>
-                    <Settings className="w-4 h-4 mr-1" /> Admin
-                  </Button>
-                )}
-                <Badge variant="outline" className="text-xs">
-                  {user.email?.split("@")[0]}
-                  {isAdmin && <Crown className="w-3 h-3 ml-1 text-warning" />}
-                </Badge>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
+            {!user && (
               <Button variant="outline" size="sm" onClick={() => navigate("/auth")}>
                 <LogIn className="w-4 h-4 mr-1" /> Sign In
               </Button>

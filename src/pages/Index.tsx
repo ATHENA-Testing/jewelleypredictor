@@ -153,14 +153,32 @@ const Index = () => {
         <Card className="mb-6 border-border bg-gradient-to-br from-primary/5 via-card to-warning/5 overflow-hidden">
           <CardContent className="p-5">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
                 <div className="p-2.5 bg-gradient-primary rounded-lg shrink-0">
                   <Sparkles className="w-5 h-5 text-primary-foreground" />
                 </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg font-bold text-foreground">
-                    Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""} 👋
-                  </h2>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-lg font-bold text-foreground truncate">
+                      Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""} 👋
+                    </h2>
+                    {user && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const { supabase } = await import("@/integrations/supabase/client");
+                          await supabase.auth.signOut();
+                          toast.success("Signed out");
+                          navigate("/auth");
+                        }}
+                        className="shrink-0 h-8 px-2 text-muted-foreground hover:text-foreground"
+                        title="Sign out"
+                      >
+                        <span className="text-xs">Sign out</span>
+                      </Button>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     Your AI-powered jewellery market intelligence — live prices, predictions & smart trade signals.
                   </p>
