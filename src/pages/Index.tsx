@@ -266,12 +266,18 @@ const Index = () => {
           )}
         </div>
 
-        {/* AI Assistant Chat - Expert advisor grounded in live data */}
-        <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Assistant">
-          <div className="mb-8">
-            <AIAssistantChat />
-          </div>
-        </SubscriptionGate>
+        {/* AI Assistant Chat - Premium only (paid subscribers) */}
+        {(() => {
+          const planName = activeSubscription?.subscription_plans?.name;
+          const isPremium = isAdmin || (!!activeSubscription && planName !== "Free Trial");
+          return (
+            <SubscriptionGate hasAccess={isPremium} featureName="AI Metal Market Expert (Premium)">
+              <div className="mb-8">
+                <AIAssistantChat />
+              </div>
+            </SubscriptionGate>
+          );
+        })()}
 
         {/* 2. AI Recommendations - High-value actionable insight */}
         <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
