@@ -14,6 +14,9 @@ import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComp
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
 import { AIAssistantChat } from "@/components/Dashboard/AIAssistantChat";
+import { PortfolioTracker } from "@/components/Dashboard/PortfolioTracker";
+import { FestivalPlanner } from "@/components/Dashboard/FestivalPlanner";
+import { GoldCalculators } from "@/components/Dashboard/GoldCalculators";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
