@@ -282,6 +282,21 @@ const Index = () => {
           );
         })()}
 
+        {/* Portfolio Tracker — personal P&L (auth users) */}
+        <div className="mb-8">
+          <PortfolioTracker />
+        </div>
+
+        {/* Gold Calculators — Jewellery, SIP, Loan EMI (free utility) */}
+        <div className="mb-8">
+          <GoldCalculators />
+        </div>
+
+        {/* Festival & Muhurat Planner — India-specific engagement */}
+        <div className="mb-8">
+          <FestivalPlanner />
+        </div>
+
         {/* 2. AI Recommendations - High-value actionable insight */}
         <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
           <div className="mb-8">
