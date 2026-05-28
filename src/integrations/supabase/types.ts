@@ -275,6 +275,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_holdings: {
+        Row: {
+          created_at: string
+          id: string
+          metal: string
+          notes: string | null
+          purchase_date: string
+          purchase_price_per_gram: number
+          quantity_grams: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metal: string
+          notes?: string | null
+          purchase_date?: string
+          purchase_price_per_gram: number
+          quantity_grams: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metal?: string
+          notes?: string | null
+          purchase_date?: string
+          purchase_price_per_gram?: number
+          quantity_grams?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
