@@ -14,6 +14,9 @@ import { HistoricalComparisonChart } from "@/components/Dashboard/HistoricalComp
 import { PredictionTicker } from "@/components/Dashboard/PredictionTicker";
 import { TodayInvestmentPlan } from "@/components/Dashboard/TodayInvestmentPlan";
 import { AIAssistantChat } from "@/components/Dashboard/AIAssistantChat";
+import { PortfolioTracker } from "@/components/Dashboard/PortfolioTracker";
+import { FestivalPlanner } from "@/components/Dashboard/FestivalPlanner";
+import { GoldCalculators } from "@/components/Dashboard/GoldCalculators";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -278,6 +281,21 @@ const Index = () => {
             </SubscriptionGate>
           );
         })()}
+
+        {/* Portfolio Tracker — personal P&L (auth users) */}
+        <div className="mb-8">
+          <PortfolioTracker />
+        </div>
+
+        {/* Gold Calculators — Jewellery, SIP, Loan EMI (free utility) */}
+        <div className="mb-8">
+          <GoldCalculators />
+        </div>
+
+        {/* Festival & Muhurat Planner — India-specific engagement */}
+        <div className="mb-8">
+          <FestivalPlanner />
+        </div>
 
         {/* 2. AI Recommendations - High-value actionable insight */}
         <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
