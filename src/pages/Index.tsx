@@ -287,10 +287,27 @@ const Index = () => {
           );
         })()}
 
+        {/* Daily streak — quick stat bar */}
+        <div className="mb-6">
+          <DailyStreak />
+        </div>
+
+        {/* Share & Earn + WhatsApp digest — engagement row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ShareToEarn />
+          <WhatsAppDigest />
+        </div>
+
         {/* Portfolio Tracker — personal P&L (auth users) */}
         <div className="mb-8">
           <PortfolioTracker />
         </div>
+
+        {/* Goal-Based Savings Planner */}
+        <div className="mb-8">
+          <GoalPlanner />
+        </div>
+
 
         {/* Gold Calculators — Jewellery, SIP, Loan EMI (free utility) */}
         <div className="mb-8">
