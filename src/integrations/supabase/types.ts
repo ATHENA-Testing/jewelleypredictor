@@ -212,6 +212,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          referral_code: string | null
           updated_at: string | null
           user_id: string
         }
@@ -220,6 +221,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          referral_code?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -228,8 +230,39 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          referral_code?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referee_user_id: string
+          referral_code: string
+          referrer_user_id: string
+          reward_granted_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referee_user_id: string
+          referral_code: string
+          referrer_user_id: string
+          reward_granted_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referee_user_id?: string
+          referral_code?: string
+          referrer_user_id?: string
+          reward_granted_at?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -275,6 +308,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_goals: {
+        Row: {
+          created_at: string
+          goal_name: string
+          id: string
+          metal: string
+          monthly_budget: number | null
+          notes: string | null
+          target_date: string
+          target_grams: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          goal_name: string
+          id?: string
+          metal: string
+          monthly_budget?: number | null
+          notes?: string | null
+          target_date: string
+          target_grams: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          goal_name?: string
+          id?: string
+          metal?: string
+          monthly_budget?: number | null
+          notes?: string | null
+          target_date?: string
+          target_grams?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_holdings: {
         Row: {
           created_at: string
@@ -306,6 +378,48 @@ export type Database = {
           purchase_date?: string
           purchase_price_per_gram?: number
           quantity_grams?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_rewards: {
+        Row: {
+          created_at: string
+          current_streak: number
+          last_login_date: string | null
+          last_share_at: string | null
+          longest_streak: number
+          referral_bonus_days: number
+          share_bonus_days: number
+          share_count: number
+          streak_bonus_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          last_login_date?: string | null
+          last_share_at?: string | null
+          longest_streak?: number
+          referral_bonus_days?: number
+          share_bonus_days?: number
+          share_count?: number
+          streak_bonus_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          last_login_date?: string | null
+          last_share_at?: string | null
+          longest_streak?: number
+          referral_bonus_days?: number
+          share_bonus_days?: number
+          share_count?: number
+          streak_bonus_days?: number
           updated_at?: string
           user_id?: string
         }
@@ -412,6 +526,39 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_optins: {
+        Row: {
+          created_at: string
+          last_sent_at: string | null
+          metals: Json
+          opted_in: boolean
+          phone: string
+          preferred_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_sent_at?: string | null
+          metals?: Json
+          opted_in?: boolean
+          phone: string
+          preferred_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_sent_at?: string | null
+          metals?: Json
+          opted_in?: boolean
+          phone?: string
+          preferred_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -450,7 +597,15 @@ export type Database = {
           user_id: string
         }[]
       }
+      apply_referral_code: { Args: { _code: string }; Returns: Json }
+      claim_share_reward: { Args: never; Returns: Json }
+      extend_subscription_days: {
+        Args: { _days: number; _user_id: string }
+        Returns: undefined
+      }
+      gen_ref_code: { Args: never; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      record_login_streak: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

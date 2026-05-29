@@ -26,8 +26,31 @@ const Auth = () => {
   const [signupName, setSignupName] = useState("");
   const [forgotEmail, setForgotEmail] = useState("");
 
+  // Capture ?ref=CODE from URL and persist for post-signup
   useEffect(() => {
-    if (!isAuthLoading && session) navigate("/dashboard", { replace: true });
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      localStorage.setItem("pending_referral_code", ref.toUpperCase());
+      setActiveTab("signup");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthLoading && session) {
+      // If a referral code was captured pre-signup, apply it now
+      const pending = localStorage.getItem("pending_referral_code");
+      if (pending) {
+        supabase.rpc("apply_referral_code", { _code: pending }).then(({ data, error }) => {
+          if (!error) {
+            const res = data as { ok: boolean; reason?: string };
+            if (res?.ok) toast.success("🎁 Referral applied! +3 bonus trial days.");
+          }
+          localStorage.removeItem("pending_referral_code");
+        });
+      }
+      navigate("/dashboard", { replace: true });
+    }
   }, [isAuthLoading, session, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -51,6 +74,7 @@ const Auth = () => {
     else toast.success("Account created! You can sign in now.");
     setIsLoading(false);
   };
+
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);

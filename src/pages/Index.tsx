@@ -17,10 +17,15 @@ import { AIAssistantChat } from "@/components/Dashboard/AIAssistantChat";
 import { PortfolioTracker } from "@/components/Dashboard/PortfolioTracker";
 import { FestivalPlanner } from "@/components/Dashboard/FestivalPlanner";
 import { GoldCalculators } from "@/components/Dashboard/GoldCalculators";
+import { ShareToEarn } from "@/components/Dashboard/ShareToEarn";
+import { DailyStreak } from "@/components/Dashboard/DailyStreak";
+import { GoalPlanner } from "@/components/Dashboard/GoalPlanner";
+import { WhatsAppDigest } from "@/components/Dashboard/WhatsAppDigest";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck } from "lucide-react";
+
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
@@ -282,10 +287,27 @@ const Index = () => {
           );
         })()}
 
+        {/* Daily streak — quick stat bar */}
+        <div className="mb-6">
+          <DailyStreak />
+        </div>
+
+        {/* Share & Earn + WhatsApp digest — engagement row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ShareToEarn />
+          <WhatsAppDigest />
+        </div>
+
         {/* Portfolio Tracker — personal P&L (auth users) */}
         <div className="mb-8">
           <PortfolioTracker />
         </div>
+
+        {/* Goal-Based Savings Planner */}
+        <div className="mb-8">
+          <GoalPlanner />
+        </div>
+
 
         {/* Gold Calculators — Jewellery, SIP, Loan EMI (free utility) */}
         <div className="mb-8">
