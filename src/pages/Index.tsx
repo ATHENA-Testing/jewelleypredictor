@@ -22,8 +22,10 @@ import { DailyStreak } from "@/components/Dashboard/DailyStreak";
 import { GoalPlanner } from "@/components/Dashboard/GoalPlanner";
 import { WhatsAppDigest } from "@/components/Dashboard/WhatsAppDigest";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck } from "lucide-react";
+
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
