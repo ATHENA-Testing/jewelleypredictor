@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { format } from "date-fns";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 
 interface MetalPriceCardProps {
   metal: string;
@@ -75,26 +76,30 @@ export const MetalPriceCard = ({
         </div>
 
         {/* Location & Last Updated */}
+        {/* Location & Last Updated */}
         <div className="mt-4 pt-3 border-t border-border/50">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
             <div className="flex items-center gap-1">
               <Globe className="w-3 h-3 text-primary" />
               <span className="font-semibold text-primary">Hyderabad</span>
             </div>
+            <ConfidenceBadge lastUpdated={lastUpdated} source={source} />
+          </div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>{formattedTime}</span>
+            </div>
             <span className={cn(
-              "font-medium",
-              source === "LiveChennai.com" ? "text-success" : 
-              source === "GoodReturns.in" ? "text-success" : "text-muted-foreground"
+              "font-medium text-[10px]",
+              source === "LiveChennai.com" || source === "GoodReturns.in" ? "text-success" : "text-muted-foreground"
             )}>
-              {source === "LiveChennai via Firecrawl" ? "LiveChennai" : 
+              {source === "LiveChennai via Firecrawl" ? "LiveChennai" :
                source === "LiveChennai.com" ? "LiveChennai" : source}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            <span>{formattedTime}</span>
-          </div>
         </div>
+
       </div>
     </Card>
   );

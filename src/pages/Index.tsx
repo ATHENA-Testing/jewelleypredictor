@@ -17,9 +17,12 @@ import { AIAssistantChat } from "@/components/Dashboard/AIAssistantChat";
 import { PortfolioTracker } from "@/components/Dashboard/PortfolioTracker";
 import { FestivalPlanner } from "@/components/Dashboard/FestivalPlanner";
 import { GoldCalculators } from "@/components/Dashboard/GoldCalculators";
+import { ShareToEarn } from "@/components/Dashboard/ShareToEarn";
+import { DailyStreak } from "@/components/Dashboard/DailyStreak";
+import { GoalPlanner } from "@/components/Dashboard/GoalPlanner";
+import { WhatsAppDigest } from "@/components/Dashboard/WhatsAppDigest";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck } from "lucide-react";
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
