@@ -21,6 +21,9 @@ import { ShareToEarn } from "@/components/Dashboard/ShareToEarn";
 import { DailyStreak } from "@/components/Dashboard/DailyStreak";
 import { GoalPlanner } from "@/components/Dashboard/GoalPlanner";
 import { WhatsAppDigest } from "@/components/Dashboard/WhatsAppDigest";
+import { PriceAlertsCenter } from "@/components/Dashboard/PriceAlertsCenter";
+import { WatchlistFavorites } from "@/components/Dashboard/WatchlistFavorites";
+import { NewsSentimentDigest } from "@/components/Dashboard/NewsSentimentDigest";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -298,9 +301,20 @@ const Index = () => {
           <WhatsAppDigest />
         </div>
 
+        {/* Watchlist + Price Alerts — engagement row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <WatchlistFavorites />
+          <PriceAlertsCenter />
+        </div>
+
         {/* Portfolio Tracker — personal P&L (auth users) */}
         <div className="mb-8">
           <PortfolioTracker />
+        </div>
+
+        {/* News Sentiment + AI Digest */}
+        <div className="mb-8">
+          <NewsSentimentDigest />
         </div>
 
         {/* Goal-Based Savings Planner */}
