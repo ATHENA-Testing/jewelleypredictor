@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
+export const SUPER_ADMIN_EMAIL = "p.sridhar557@gmail.com";
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -51,5 +53,7 @@ export const useAuth = () => {
     await supabase.auth.signOut();
   }, []);
 
-  return { user, session, isLoading, isAdmin, signOut };
+  const isSuperAdmin = (user?.email ?? "").toLowerCase() === SUPER_ADMIN_EMAIL;
+
+  return { user, session, isLoading, isAdmin: isAdmin || isSuperAdmin, isSuperAdmin, signOut };
 };

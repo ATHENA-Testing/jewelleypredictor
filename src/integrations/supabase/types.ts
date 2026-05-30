@@ -206,6 +206,51 @@ export type Database = {
         }
         Relationships: []
       }
+      price_alerts: {
+        Row: {
+          condition: string
+          created_at: string
+          currency: string
+          id: string
+          is_active: boolean
+          last_price: number | null
+          metal: string
+          note: string | null
+          target_price: number
+          triggered_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          condition: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          last_price?: number | null
+          metal: string
+          note?: string | null
+          target_price: number
+          triggered_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          last_price?: number | null
+          metal?: string
+          note?: string | null
+          target_price?: number
+          triggered_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -495,6 +540,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_watchlist: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          metal: string
+          user_id: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          metal: string
+          user_id: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          metal?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       visitor_analytics: {
         Row: {
