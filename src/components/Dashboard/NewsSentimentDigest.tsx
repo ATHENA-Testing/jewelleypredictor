@@ -43,7 +43,7 @@ export const NewsSentimentDigest = () => {
 
   const digest = useMemo(() => {
     if (news.length === 0) return null;
-    const tagged = news.map((n) => ({ ...n, tag: tagFor(n.title, n.summary || "") }));
+    const tagged = news.map((n) => ({ ...n, tag: (n.sentiment as "bullish" | "bearish" | "neutral") || tagFor(n.title, "") }));
     const counts = { bullish: 0, bearish: 0, neutral: 0 };
     tagged.forEach((t) => { counts[t.tag] += 1; });
     const overall: "bullish" | "bearish" | "neutral" =
@@ -95,14 +95,13 @@ export const NewsSentimentDigest = () => {
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {isLoading && <p className="text-xs text-muted-foreground">Loading headlines…</p>}
           {digest?.tagged.slice(0, 8).map((n, i) => (
-            <a key={i} href={n.url} target="_blank" rel="noopener noreferrer"
-               className="block p-2 rounded-lg border border-border bg-card hover:border-primary/40 transition">
+            <div key={i} className="block p-2 rounded-lg border border-border bg-card">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-xs font-medium text-foreground line-clamp-2 flex-1">{n.title}</p>
                 {sentimentBadge(n.tag)}
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">{n.source}</p>
-            </a>
+              <p className="text-[10px] text-muted-foreground mt-1">{n.source} • {n.time}</p>
+            </div>
           ))}
         </div>
       </CardContent>
