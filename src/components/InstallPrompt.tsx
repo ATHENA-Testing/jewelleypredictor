@@ -17,6 +17,8 @@ export const InstallPrompt = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Already running inside the native Android/iOS app — nothing to install.
+    if (isNative()) return;
     const ua = window.navigator.userAgent.toLowerCase();
     const ios = /iphone|ipad|ipod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
     const standalone =
