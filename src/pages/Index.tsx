@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MetalPriceCard } from "@/components/Dashboard/MetalPriceCard";
 import { TechnicalIndicators } from "@/components/Dashboard/TechnicalIndicators";
 import { AlertConfiguration } from "@/components/Dashboard/AlertConfiguration";
