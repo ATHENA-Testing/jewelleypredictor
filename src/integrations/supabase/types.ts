@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target?: string | null
+        }
+        Relationships: []
+      }
+      ai_feature_config: {
+        Row: {
+          active_model: string
+          enabled: boolean
+          fallback_models: string[]
+          feature: string
+          id: string
+          label: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active_model: string
+          enabled?: boolean
+          fallback_models?: string[]
+          feature: string
+          id?: string
+          label: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active_model?: string
+          enabled?: boolean
+          fallback_models?: string[]
+          feature?: string
+          id?: string
+          label?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      ai_models: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string
+          model_id: string
+          notes: string | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label: string
+          model_id: string
+          notes?: string | null
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          model_id?: string
+          notes?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           id: string
@@ -34,6 +130,78 @@ export type Database = {
           key_description?: string | null
           key_name?: string
           updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      device_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      integration_configs: {
+        Row: {
+          category: string
+          config: Json
+          enabled: boolean
+          id: string
+          label: string
+          last_tested_at: string | null
+          provider_key: string
+          secret_last_rotated: string | null
+          secret_name: string | null
+          secret_set: boolean
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          config?: Json
+          enabled?: boolean
+          id?: string
+          label: string
+          last_tested_at?: string | null
+          provider_key: string
+          secret_last_rotated?: string | null
+          secret_name?: string | null
+          secret_set?: boolean
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          config?: Json
+          enabled?: boolean
+          id?: string
+          label?: string
+          last_tested_at?: string | null
+          provider_key?: string
+          secret_last_rotated?: string | null
+          secret_name?: string | null
+          secret_set?: boolean
+          status?: string
+          updated_at?: string
           updated_by?: string | null
         }
         Relationships: []
@@ -164,6 +332,42 @@ export type Database = {
           price_per_gram?: number
           price_per_troy_oz?: number
           recorded_at?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          account_alerts: boolean
+          price_alerts: boolean
+          promotions: boolean
+          push_enabled: boolean
+          reminders: boolean
+          security_alerts: boolean
+          transaction_alerts: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_alerts?: boolean
+          price_alerts?: boolean
+          promotions?: boolean
+          push_enabled?: boolean
+          reminders?: boolean
+          security_alerts?: boolean
+          transaction_alerts?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_alerts?: boolean
+          price_alerts?: boolean
+          promotions?: boolean
+          push_enabled?: boolean
+          reminders?: boolean
+          security_alerts?: boolean
+          transaction_alerts?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -311,6 +515,39 @@ export type Database = {
         }
         Relationships: []
       }
+      storage_config: {
+        Row: {
+          config: Json
+          id: string
+          is_active: boolean
+          label: string
+          provider: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config?: Json
+          id?: string
+          is_active?: boolean
+          label: string
+          provider: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json
+          id?: string
+          is_active?: boolean
+          label?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -424,6 +661,36 @@ export type Database = {
           purchase_price_per_gram?: number
           quantity_grams?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notifications: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -666,6 +933,11 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_platform_analytics: { Args: never; Returns: Json }
+      admin_set_user_status: {
+        Args: { _suspended: boolean; _user_id: string }
+        Returns: boolean
+      }
       apply_referral_code: { Args: { _code: string }; Returns: Json }
       claim_share_reward: { Args: never; Returns: Json }
       extend_subscription_days: {
@@ -674,6 +946,8 @@ export type Database = {
       }
       gen_ref_code: { Args: never; Returns: string }
       has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       record_login_streak: { Args: never; Returns: Json }
     }
     Enums: {
