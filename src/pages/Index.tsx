@@ -45,6 +45,17 @@ import { toast } from "sonner";
 
 const AUTO_SYNC_INTERVAL = 5 * 60 * 1000;
 
+const SECTIONS = [
+  { value: "overview", label: "Overview", icon: LayoutDashboard },
+  { value: "ai", label: "AI Expert", icon: Brain },
+  { value: "predictions", label: "Predictions", icon: LineChart },
+  { value: "markets", label: "Markets", icon: Globe2 },
+  { value: "portfolio", label: "Portfolio", icon: Briefcase },
+  { value: "tools", label: "Tools", icon: Calculator },
+  { value: "rewards", label: "Rewards", icon: Gift },
+];
+
+
 const Index = () => {
   const navigate = useNavigate();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
