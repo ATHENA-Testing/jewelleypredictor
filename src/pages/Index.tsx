@@ -27,7 +27,7 @@ import { NewsSentimentDigest } from "@/components/Dashboard/NewsSentimentDigest"
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck } from "lucide-react";
+import { AlertCircle, RefreshCw, Crown, TrendingUp, Brain, Zap, Target, Sparkles, ShieldCheck, LayoutDashboard, LineChart, Globe2, Briefcase, Calculator, Gift } from "lucide-react";
 
 import { useMetalPrices } from "@/hooks/useMetalPrices";
 import { useMarketAnalysis } from "@/hooks/useMarketAnalysis";
