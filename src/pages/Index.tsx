@@ -277,150 +277,105 @@ const Index = () => {
           )}
         </div>
 
-        {/* AI Assistant Chat - Premium only (paid subscribers) */}
-        {(() => {
-          const planName = activeSubscription?.subscription_plans?.name;
-          const isPremium = isAdmin || (!!activeSubscription && planName !== "Free Trial");
-          return (
-            <SubscriptionGate hasAccess={isPremium} featureName="AI Metal Market Expert (Premium)">
-              <div className="mb-8">
-                <AIAssistantChat />
-              </div>
-            </SubscriptionGate>
-          );
-        })()}
-
-        {/* Daily streak — quick stat bar */}
-        <div className="mb-6">
-          <DailyStreak />
-        </div>
-
-        {/* Share & Earn + WhatsApp digest — engagement row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <ShareToEarn />
-          <WhatsAppDigest />
-        </div>
-
-        {/* Watchlist + Price Alerts — engagement row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <WatchlistFavorites />
-          <PriceAlertsCenter />
-        </div>
-
-        {/* Portfolio Tracker — personal P&L (auth users) */}
-        <div className="mb-8">
-          <PortfolioTracker />
-        </div>
-
-        {/* News Sentiment + AI Digest */}
-        <div className="mb-8">
-          <NewsSentimentDigest />
-        </div>
-
-        {/* Goal-Based Savings Planner */}
-        <div className="mb-8">
-          <GoalPlanner />
-        </div>
-
-
-        {/* Gold Calculators — Jewellery, SIP, Loan EMI (free utility) */}
-        <div className="mb-8">
-          <GoldCalculators />
-        </div>
-
-        {/* Festival & Muhurat Planner — India-specific engagement */}
-        <div className="mb-8">
-          <FestivalPlanner />
-        </div>
-
-        {/* 2. AI Recommendations - High-value actionable insight */}
-        <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
-          <div className="mb-8">
-            {recsLoading ? (
-              <Skeleton className="h-64 rounded-lg" />
-            ) : (
-              <AIRecommendations recommendations={recommendations} />
-            )}
-          </div>
-        </SubscriptionGate>
-
-        {/* 3. Buy/Sell Timing - Actionable trading signals */}
-        <SubscriptionGate hasAccess={canAccess("buy_sell_timing")} featureName="Buy/Sell Timing">
-          <div className="mb-8">
-            <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
-          </div>
-        </SubscriptionGate>
-
-        {/* 4. Today's Investment Plan - Daily actionable plan */}
-        <SubscriptionGate hasAccess={canAccess("investment_plan")} featureName="Investment Plan">
-          <div className="mb-8">
-            <TodayInvestmentPlan />
-          </div>
-        </SubscriptionGate>
-
-        {/* 5. 365-Day Predictions - Long-term forecasting */}
-        <SubscriptionGate hasAccess={canAccess("predictions")} featureName="365-Day Predictions">
-          <div className="mb-8">
-            <YearlyPrediction />
-          </div>
-        </SubscriptionGate>
-
-        {/* 6. Market News - Free context/awareness */}
-        <div className="mb-8">
-          <MarketNews />
-        </div>
-
-        {/* 7. Rate Comparison - Compare across sources */}
-        <SubscriptionGate hasAccess={canAccess("market_analysis")} featureName="Rate Comparison">
-          <div className="mb-8">
-            <RateComparison />
-          </div>
-        </SubscriptionGate>
-
-        {/* 8. City-wise Rates */}
-        <SubscriptionGate hasAccess={canAccess("city_rates")} featureName="City-wise Rates">
-          <div className="mb-8">
-            <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
-          </div>
-        </SubscriptionGate>
-
-        {/* 9. Historical Charts & Data */}
-        <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Charts">
-          <div className="mb-8">
-            <HistoricalComparisonChart />
-          </div>
-        </SubscriptionGate>
-
-        <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Data">
-          <div className="mb-8">
-            <HistoricalDataTable />
-          </div>
-        </SubscriptionGate>
-
-        {/* 10. Technical Analysis & Alerts */}
-        <SubscriptionGate hasAccess={canAccess("technical_indicators")} featureName="Technical Analysis">
-          <Tabs defaultValue="technical" className="space-y-6">
-            <TabsList className="grid w-full md:w-auto md:inline-grid grid-cols-3 bg-card border border-border">
-              <TabsTrigger value="technical">Technical</TabsTrigger>
-              <TabsTrigger value="alerts">Alerts</TabsTrigger>
-              <TabsTrigger value="tools">Tools</TabsTrigger>
+        {/* Section navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="-mx-4 px-4 overflow-x-auto pb-1">
+            <TabsList className="inline-flex w-max bg-card border border-border">
+              {SECTIONS.map((s) => (
+                <TabsTrigger key={s.value} value={s.value} className="gap-1.5 whitespace-nowrap">
+                  <s.icon className="w-3.5 h-3.5" />
+                  {s.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
-            <TabsContent value="technical" className="space-y-6">
+          </div>
+
+          {/* OVERVIEW */}
+          <TabsContent value="overview" className="space-y-8">
+            <DailyStreak />
+            <NewsSentimentDigest />
+            <SubscriptionGate hasAccess={canAccess("investment_plan")} featureName="Investment Plan">
+              <TodayInvestmentPlan />
+            </SubscriptionGate>
+            <MarketNews />
+          </TabsContent>
+
+          {/* AI EXPERT */}
+          <TabsContent value="ai" className="space-y-8">
+            {(() => {
+              const planName = activeSubscription?.subscription_plans?.name;
+              const isPremium = isAdmin || (!!activeSubscription && planName !== "Free Trial");
+              return (
+                <SubscriptionGate hasAccess={isPremium} featureName="AI Metal Market Expert (Premium)">
+                  <AIAssistantChat />
+                </SubscriptionGate>
+              );
+            })()}
+            <SubscriptionGate hasAccess={canAccess("ai_recommendations")} featureName="AI Recommendations">
+              {recsLoading ? <Skeleton className="h-64 rounded-lg" /> : <AIRecommendations recommendations={recommendations} />}
+            </SubscriptionGate>
+            <SubscriptionGate hasAccess={canAccess("buy_sell_timing")} featureName="Buy/Sell Timing">
+              <BuySellTimingSuggestions suggestions={suggestions} isLoading={suggestionsLoading} />
+            </SubscriptionGate>
+          </TabsContent>
+
+          {/* PREDICTIONS */}
+          <TabsContent value="predictions" className="space-y-8">
+            <SubscriptionGate hasAccess={canAccess("predictions")} featureName="365-Day Predictions">
+              <YearlyPrediction />
+            </SubscriptionGate>
+            <SubscriptionGate hasAccess={canAccess("technical_indicators")} featureName="Technical Analysis">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <TechnicalIndicators metal={selectedMetal} />
                 <MarketAnalysisCard analysis={marketAnalysis} isLoading={marketLoading} onRefresh={refetchMarketAnalysis} />
               </div>
-            </TabsContent>
-            <TabsContent value="alerts" className="space-y-6">
+            </SubscriptionGate>
+            <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Charts">
+              <HistoricalComparisonChart />
+            </SubscriptionGate>
+            <SubscriptionGate hasAccess={canAccess("historical_data")} featureName="Historical Data">
+              <HistoricalDataTable />
+            </SubscriptionGate>
+          </TabsContent>
+
+          {/* MARKETS */}
+          <TabsContent value="markets" className="space-y-8">
+            <SubscriptionGate hasAccess={canAccess("market_analysis")} featureName="Rate Comparison">
+              <RateComparison />
+            </SubscriptionGate>
+            <SubscriptionGate hasAccess={canAccess("city_rates")} featureName="City-wise Rates">
+              <CityRatesTable basePrices={basePrices} isLoading={isLoading} />
+            </SubscriptionGate>
+          </TabsContent>
+
+          {/* PORTFOLIO */}
+          <TabsContent value="portfolio" className="space-y-8">
+            <PortfolioTracker />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <WatchlistFavorites />
+              <PriceAlertsCenter />
+            </div>
+            <GoalPlanner />
+            <SubscriptionGate hasAccess={canAccess("technical_indicators")} featureName="Alert Configuration">
               <AlertConfiguration />
-            </TabsContent>
-            <TabsContent value="tools" className="space-y-6">
-              <div className="grid grid-cols-1 gap-6">
-                <MarketAnalysisCard analysis={marketAnalysis} isLoading={marketLoading} onRefresh={refetchMarketAnalysis} />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </SubscriptionGate>
+            </SubscriptionGate>
+          </TabsContent>
+
+          {/* TOOLS */}
+          <TabsContent value="tools" className="space-y-8">
+            <GoldCalculators />
+            <FestivalPlanner />
+          </TabsContent>
+
+          {/* REWARDS */}
+          <TabsContent value="rewards" className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ShareToEarn />
+              <WhatsAppDigest />
+            </div>
+          </TabsContent>
+        </Tabs>
+
 
         {/* Footer */}
         <div className="mt-12 p-6 bg-gradient-card border-2 border-border rounded-lg">
