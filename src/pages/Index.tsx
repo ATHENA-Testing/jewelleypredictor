@@ -58,10 +58,16 @@ const SECTIONS = [
 
 const Index = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { activeSubscription, hasAccess } = useSubscription(user?.id);
 
+  const tabParam = searchParams.get("tab") || "overview";
+  const activeTab = SECTIONS.some((s) => s.value === tabParam) ? tabParam : "overview";
+  const setActiveTab = (value: string) => setSearchParams({ tab: value }, { replace: true });
+
   const [selectedMetal, setSelectedMetal] = useState("Gold 24K");
+
   const { metals, isLoading, error, lastUpdate, refetch } = useMetalPrices();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
