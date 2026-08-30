@@ -914,6 +914,17 @@ export type Database = {
           total_users: number
         }[]
       }
+      admin_get_usage_activity: {
+        Args: never
+        Returns: {
+          active_days_30d: number
+          email: string
+          last_activity_at: string
+          last_sign_in_at: string
+          page_views_30d: number
+          user_id: string
+        }[]
+      }
       admin_get_user_activity: {
         Args: never
         Returns: {
