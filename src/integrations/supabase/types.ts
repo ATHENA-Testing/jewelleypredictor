@@ -897,9 +897,40 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      manual_market_rates_public: {
+        Row: {
+          id: string | null
+          metal: string | null
+          price_per_gram: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string | null
+          metal?: string | null
+          price_per_gram?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string | null
+          metal?: string | null
+          price_per_gram?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      admin_get_manual_market_rates: {
+        Args: never
+        Returns: {
+          id: string
+          metal: string
+          notes: string
+          price_per_gram: number
+          updated_at: string
+          updated_by: string
+        }[]
+      }
       admin_get_revenue_summary: {
         Args: never
         Returns: {
@@ -945,6 +976,10 @@ export type Database = {
         }[]
       }
       admin_platform_analytics: { Args: never; Returns: Json }
+      admin_set_manual_market_rate: {
+        Args: { _metal: string; _notes: string; _price_per_gram: number }
+        Returns: boolean
+      }
       admin_set_user_status: {
         Args: { _suspended: boolean; _user_id: string }
         Returns: boolean
