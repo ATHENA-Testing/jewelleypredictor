@@ -27,6 +27,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Auth />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/auth/callback" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<Index />} />
               <Route path="/pricing" element={<Pricing />} />

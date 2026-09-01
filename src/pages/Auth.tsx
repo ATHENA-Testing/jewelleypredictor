@@ -68,7 +68,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signUp({
       email: signupEmail,
       password: signupPassword,
-      options: { data: { full_name: signupName }, emailRedirectTo: `${window.location.origin}/dashboard` },
+       options: { data: { full_name: signupName }, emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) toast.error(error.message);
     else toast.success("Account created! You can sign in now.");
@@ -78,7 +78,7 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/dashboard` });
+    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (error) toast.error("Google sign-in failed");
     setIsLoading(false);
   };

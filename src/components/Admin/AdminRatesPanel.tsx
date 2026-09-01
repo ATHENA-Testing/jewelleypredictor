@@ -36,22 +36,13 @@ export const AdminRatesPanel = () => {
       return;
     }
 
-    const { data: roles } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    setIsAdmin(!!roles);
+    const { data } = await supabase.rpc('is_admin', { _user_id: user.id });
+    setIsAdmin(data === true);
   };
 
   const fetchRates = async () => {
     try {
-      const { data, error } = await supabase
-        .from('manual_market_rates')
-        .select('*')
-        .order('metal');
+      const { data, error } = await supabase.rpc('admin_get_manual_market_rates');
 
       if (error) throw error;
 
@@ -109,15 +100,11 @@ export const AdminRatesPanel = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase
-        .from('manual_market_rates')
-        .update({
-          price_per_gram: price,
-          notes: edited.notes || null,
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id
-        })
-        .eq('metal', metal);
+      const { error } = await supabase.rpc('admin_set_manual_market_rate', {
+        _metal: metal,
+        _price_per_gram: price,
+        _notes: edited.notes || null,
+      });
 
       if (error) throw error;
 
@@ -150,15 +137,11 @@ export const AdminRatesPanel = () => {
         
         if (isNaN(price) || price <= 0) continue;
 
-        await supabase
-          .from('manual_market_rates')
-          .update({
-            price_per_gram: price,
-            notes: edited.notes || null,
-            updated_at: new Date().toISOString(),
-            updated_by: user?.id
-          })
-          .eq('metal', metal);
+        await supabase.rpc('admin_set_manual_market_rate', {
+          _metal: metal,
+          _price_per_gram: price,
+          _notes: edited.notes || null,
+        });
       }
 
       toast({
