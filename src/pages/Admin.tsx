@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { AdminRatesPanel } from "@/components/Admin/AdminRatesPanel";
 import { AdminUserActivity } from "@/components/Admin/AdminUserActivity";
+import { AdminPlatformControls } from "@/components/Admin/AdminPlatformControls";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,12 +42,16 @@ const Admin = () => {
           <TabsList className="bg-card border border-border">
             <TabsTrigger value="users">User Activity</TabsTrigger>
             <TabsTrigger value="rates">Market Rates</TabsTrigger>
+              <TabsTrigger value="platform">Platform</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
             <AdminUserActivity />
           </TabsContent>
           <TabsContent value="rates">
             <AdminRatesPanel />
+          </TabsContent>
+          <TabsContent value="platform">
+            <AdminPlatformControls />
           </TabsContent>
         </Tabs>
       </main>

@@ -28,18 +28,28 @@ export const useSubscription = (userId?: string) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [activeSubscription, setActiveSubscription] = useState<UserSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     fetchPlans();
   }, []);
 
   useEffect(() => {
-    if (userId) fetchActiveSubscription(userId);
+    if (userId) {
+      void fetchSuperAdmin(userId);
+      void fetchActiveSubscription(userId);
+    }
     else {
       setActiveSubscription(null);
+      setIsSuperAdmin(false);
       setIsLoading(false);
     }
   }, [userId]);
+
+  const fetchSuperAdmin = async (uid: string) => {
+    const { data } = await supabase.rpc("is_super_admin", { _user_id: uid });
+    setIsSuperAdmin(data === true);
+  };
 
   const fetchPlans = async () => {
     const { data } = await supabase
@@ -66,6 +76,7 @@ export const useSubscription = (userId?: string) => {
   };
 
   const hasAccess = (metal?: string, feature?: string): boolean => {
+    if (isSuperAdmin) return true;
     if (!activeSubscription?.subscription_plans) return false;
     const plan = activeSubscription.subscription_plans;
     if (metal && !plan.metals_included.includes(metal)) return false;
@@ -73,5 +84,5 @@ export const useSubscription = (userId?: string) => {
     return true;
   };
 
-  return { plans, activeSubscription, isLoading, hasAccess, refetch: () => userId && fetchActiveSubscription(userId) };
+  return { plans, activeSubscription, isLoading, hasAccess, isSuperAdmin, refetch: () => userId && fetchActiveSubscription(userId) };
 };

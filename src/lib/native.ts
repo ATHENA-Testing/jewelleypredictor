@@ -2,6 +2,25 @@ import { Capacitor } from "@capacitor/core";
 
 export const isNative = () => Capacitor.isNativePlatform();
 
+export async function enableNativeNotifications(userId: string): Promise<boolean> {
+  if (!isNative()) return false;
+
+  try {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    const permission = await LocalNotifications.requestPermissions();
+    if (permission.display !== "granted") return false;
+
+    const storageKey = "metalpredict_device_token";
+    const token = localStorage.getItem(storageKey) ?? crypto.randomUUID();
+    localStorage.setItem(storageKey, token);
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.from("device_tokens").upsert({ user_id: userId, token: `local-${token}`, platform: Capacitor.getPlatform() }, { onConflict: "user_id,token" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Initialise native-only behaviour (status bar, splash screen, hardware back button).
  * Safe to call on the web — it no-ops there.

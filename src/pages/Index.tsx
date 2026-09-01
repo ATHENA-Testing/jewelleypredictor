@@ -24,6 +24,7 @@ import { WhatsAppDigest } from "@/components/Dashboard/WhatsAppDigest";
 import { PriceAlertsCenter } from "@/components/Dashboard/PriceAlertsCenter";
 import { WatchlistFavorites } from "@/components/Dashboard/WatchlistFavorites";
 import { NewsSentimentDigest } from "@/components/Dashboard/NewsSentimentDigest";
+import { NotificationCenter } from "@/components/Dashboard/NotificationCenter";
 import { SubscriptionGate } from "@/components/Dashboard/SubscriptionGate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -390,6 +391,7 @@ const Index = () => {
               <ShareToEarn />
               <WhatsAppDigest />
             </div>
+            <NotificationCenter />
           </TabsContent>
         </Tabs>
 
