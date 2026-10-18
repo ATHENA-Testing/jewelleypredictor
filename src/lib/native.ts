@@ -47,6 +47,22 @@ export async function initNative() {
 
   try {
     const { App } = await import("@capacitor/app");
+    const handleUrl = async (url: string) => {
+      const parsed = new URL(url);
+      const params = new URLSearchParams(parsed.hash.replace(/^#/, ""));
+      const accessToken = params.get("access_token");
+      const refreshToken = params.get("refresh_token");
+      if (accessToken && refreshToken) {
+        const { supabase } = await import("@/integrations/supabase/client");
+        await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      }
+      const target = `/auth/callback${parsed.hash || parsed.search || ""}`;
+      window.history.replaceState({}, "", target);
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    };
+    App.addListener("appUrlOpen", ({ url }) => { void handleUrl(url); });
+    const launchUrl = await App.getLaunchUrl();
+    if (launchUrl?.url) await handleUrl(launchUrl.url);
     App.addListener("backButton", ({ canGoBack }) => {
       if (canGoBack) window.history.back();
       else App.exitApp();

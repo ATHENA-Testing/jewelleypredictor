@@ -12,6 +12,7 @@ import {
   Sparkles, Mail, Lock, User, Chrome, Shield, TrendingUp, Clock, Gift,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isNative } from "@/lib/native";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -78,7 +79,8 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const redirectUri = isNative() ? "metalpredict://auth/callback" : `${window.location.origin}/auth/callback`;
+    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
     if (error) toast.error("Google sign-in failed");
     setIsLoading(false);
   };

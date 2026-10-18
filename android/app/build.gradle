@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.lovable.c4b8c3df8da1491ca943adf1069ef839"
+    namespace = "com.metalpredict.pro"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.lovable.c4b8c3df8da1491ca943adf1069ef839"
+        applicationId "com.metalpredict.pro"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
