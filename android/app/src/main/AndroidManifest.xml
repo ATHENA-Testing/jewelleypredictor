@@ -27,6 +27,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="metalpredict" android:host="auth" />
+                <data android:scheme="metalpredict" android:host="auth" android:pathPrefix="/reset-password" />
             </intent-filter>
 
         </activity>
