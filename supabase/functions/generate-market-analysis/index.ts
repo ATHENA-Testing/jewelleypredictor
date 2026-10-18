@@ -38,16 +38,20 @@ serve(async (req) => {
 
     const livePrice = manualLatest?.price_per_gram ?? recentData?.[0]?.price_per_gram ?? null;
 
-    // Call Lovable AI for market analysis using a top-tier reasoning model
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const { data: featureConfig } = await supabaseClient.from('ai_feature_config').select('active_model, fallback_models, enabled').eq('feature', 'market_analysis').maybeSingle();
+    if (featureConfig?.enabled === false) throw new Error('Market analysis is disabled by the administrator');
+    const models = [...new Set([featureConfig?.active_model, ...(featureConfig?.fallback_models ?? [])].filter(Boolean))];
+    let aiResponse: Response | null = null;
+    for (const model of (models.length ? models : ['google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'openai/gpt-5-mini'])) {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
-        reasoning: { effort: 'high' },
+        model,
+        reasoning: { effort: model === models[0] ? 'high' : 'low' },
         messages: [
           {
             role: 'system',
@@ -87,7 +91,10 @@ Format as JSON:
         temperature: 0.4,
         max_tokens: 3000
       }),
-    });
+      });
+      if (response.ok) { aiResponse = response; break; }
+    }
+    if (!aiResponse) throw new Error('All configured market-analysis models are unavailable');
 
     if (!aiResponse.ok) {
       throw new Error(`AI API error: ${aiResponse.status}`);
