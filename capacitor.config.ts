@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.c4b8c3df8da1491ca943adf1069ef839',
+  appId: 'com.metalpredict.pro',
   appName: 'MetalPredict Pro',
   webDir: 'dist',
   // For a PUBLIC / Play Store APK the app must run the bundled `dist` build.

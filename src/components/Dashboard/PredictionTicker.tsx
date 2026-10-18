@@ -23,7 +23,7 @@ export const PredictionTicker = () => {
       try {
         // Get current rates
         const { data: currentRates } = await supabase
-          .from('manual_market_rates')
+          .from('manual_market_rates_public')
           .select('metal, price_per_gram');
 
         // Get tomorrow's predictions

@@ -72,7 +72,7 @@ export const PriceAlertsCenter = () => {
   const requestPermission = async () => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "default") {
-      const p = await Notification.requestPermission();
+        const p = await Notification.requestPermission();
       if (p === "granted") toast.success("Browser notifications enabled");
     }
   };
