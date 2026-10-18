@@ -76,24 +76,27 @@ serve(async (req) => {
       priceData.reduce((sum, d) => sum + Math.pow((d.change || 0) - avgChange, 2), 0) / priceData.length
     );
 
-    // Call Lovable AI for prediction analysis
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
-        reasoning: { effort: 'high' },
-        messages: [
-          {
-            role: 'system',
-            content: `You are a top-tier quantitative precious metals analyst specializing in the Indian ${metal} market. Combine current live spot rates with full historical price evolution to deliver expert-grade forecasts.`
-          },
-          {
-            role: 'user',
-            content: `You are an expert precious metals market analyst using advanced ML techniques (supervised learning, ensemble methods, reinforcement learning) on the most recent live data plus 90 days of historical evolution.
+    const { data: featureConfig } = await supabaseClient
+      .from('ai_feature_config')
+      .select('active_model, fallback_models, enabled')
+      .eq('feature', 'predictions')
+      .maybeSingle();
+    if (featureConfig?.enabled === false) throw new Error('Prediction generation is disabled by the administrator');
+    const modelOrder = [...new Set([featureConfig?.active_model, ...(featureConfig?.fallback_models ?? [])].filter(Boolean))];
+    const models = modelOrder.length ? modelOrder : ['google/gemini-2.5-pro', 'google/gemini-2.5-flash', 'openai/gpt-5-mini'];
+
+    // Call Lovable AI for prediction analysis, falling back on quota or provider errors.
+    let aiResponse: Response | null = null;
+    for (const model of models) {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${Deno.env.get('LOVABLE_API_KEY')}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          reasoning: { effort: model === models[0] ? 'high' : 'low' },
+          messages: [
+            { role: 'system', content: `You are a top-tier quantitative precious metals analyst specializing in the Indian ${metal} market. Combine current live spot rates with full historical price evolution to deliver expert-grade forecasts.` },
+            { role: 'user', content: `You are an expert precious metals market analyst using advanced ML techniques (supervised learning, ensemble methods, reinforcement learning) on the most recent live data plus 90 days of historical evolution.
 
 REINFORCEMENT LEARNING FEEDBACK (past prediction vs actual):
 ${JSON.stringify(learnings ?? [], null, 2)}
@@ -109,39 +112,17 @@ LATEST LIVE MARKET CONDITIONS (use as the anchor for Day 1 forecasts):
 - 90-Day Trend: ${priceData[priceData.length-1].price > priceData[0].price ? 'Upward' : 'Downward'}
 - Calibrate confidence using the prior-accuracy feedback above
 
-ANALYSIS REQUIREMENTS:
-1. Apply supervised learning on historical price patterns
-2. Use ensemble methods (Random Forest, Gradient Boosting concepts)
-3. Consider economic indicators, geopolitical factors, and market sentiment
-4. Apply reinforcement learning from past prediction accuracy
-5. Cross-reference with multiple reliable market sources (e.g., Reuters, Bloomberg, World Gold Council, Kitco, MetalFocus)
-6. Account for seasonal patterns and cyclical trends
+Return ONLY a JSON object with predictions (10 days, each with day, price, confidence_high, confidence_low), confidence_score (0-100), reasoning, key_factors, sentiment (bullish|bearish|neutral), and sources (at least 3 authoritative sources).` }
+          ],
+          temperature: 0.4,
+          max_tokens: 4000
+        }),
+      });
+      if (response.ok) { aiResponse = response; break; }
+      console.warn(`Prediction model ${model} failed: ${response.status}`);
+    }
 
-Based on this comprehensive analysis, provide:
-1. 10-day price predictions with confidence intervals (using ensemble methods)
-2. Overall confidence score (0-100) based on model accuracy and cross-source validation
-3. Detailed reasoning for your predictions including learning from historical data
-4. Key factors influencing the forecast
-5. Market sentiment (bullish/bearish/neutral)
-6. Reliable authoritative sources for your analysis (minimum 3 sources)
-
-Return ONLY a JSON object in this exact format:
-{
-  "predictions": [
-    {"day": 1, "price": number, "confidence_high": number, "confidence_low": number}
-  ],
-  "confidence_score": number,
-  "reasoning": "string (include mention of machine learning and historical learning)",
-  "key_factors": ["string"],
-  "sentiment": "bullish|bearish|neutral",
-  "sources": ["string (minimum 3 authoritative sources like Reuters, Bloomberg, World Gold Council, Kitco, MetalFocus)"]
-}`
-          }
-        ],
-        temperature: 0.4,
-        max_tokens: 4000
-      }),
-    });
+    if (!aiResponse) throw new Error('All configured prediction models are unavailable');
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();

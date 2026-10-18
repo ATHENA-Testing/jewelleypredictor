@@ -1,4 +1,4 @@
-package app.lovable.c4b8c3df8da1491ca943adf1069ef839;
+package com.metalpredict.pro;
 
 import com.getcapacitor.BridgeActivity;
 

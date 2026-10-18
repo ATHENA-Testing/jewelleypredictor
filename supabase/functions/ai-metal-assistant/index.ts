@@ -91,14 +91,27 @@ ${JSON.stringify(learnings ?? [], null, 2)}
 
 When recommending the best time to buy/sell ornaments, find the lowest predicted price (for buying) or highest (for selling) within the prediction window, give the exact date, the price, the difference vs today, and a 1-2 line reasoning. Always end with a "Sources" line if applicable.`;
 
-    // Try multiple models in order, falling back when one is rate-limited or out of credits
-    const MODEL_FALLBACK_CHAIN: Array<{ model: string; reasoning?: { effort: string } }> = [
-      { model: "google/gemini-2.5-pro", reasoning: { effort: "medium" } },
-      { model: "google/gemini-2.5-flash", reasoning: { effort: "low" } },
-      { model: "google/gemini-2.5-flash-lite" },
-      { model: "openai/gpt-5-mini" },
-      { model: "openai/gpt-5-nano" },
+    // Read the admin-managed model order, but keep a safe fallback if the registry is unavailable.
+    const defaultModels = [
+      "google/gemini-2.5-pro",
+      "google/gemini-2.5-flash",
+      "google/gemini-2.5-flash-lite",
+      "openai/gpt-5-mini",
+      "openai/gpt-5-nano",
     ];
+    const { data: featureConfig } = await supabase
+      .from("ai_feature_config")
+      .select("active_model, fallback_models, enabled")
+      .eq("feature", "assistant")
+      .maybeSingle();
+    const configuredModels = featureConfig?.enabled === false
+      ? []
+      : [featureConfig?.active_model, ...(featureConfig?.fallback_models ?? [])].filter((model): model is string => Boolean(model));
+    const modelOrder = [...new Set(configuredModels.length ? configuredModels : defaultModels)];
+    const MODEL_FALLBACK_CHAIN: Array<{ model: string; reasoning?: { effort: string } }> = modelOrder.map((model, index) => ({
+      model,
+      ...(index === 0 ? { reasoning: { effort: "medium" } } : {}),
+    }));
 
     let aiResp: Response | null = null;
     let usedModel = "";

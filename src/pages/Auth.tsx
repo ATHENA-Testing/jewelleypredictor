@@ -12,6 +12,7 @@ import {
   Sparkles, Mail, Lock, User, Chrome, Shield, TrendingUp, Clock, Gift,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isNative } from "@/lib/native";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -68,7 +69,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signUp({
       email: signupEmail,
       password: signupPassword,
-       options: { data: { full_name: signupName }, emailRedirectTo: `${window.location.origin}/auth/callback` },
+       options: { data: { full_name: signupName }, emailRedirectTo: isNative() ? "metalpredict://auth/callback" : `${window.location.origin}/auth/callback` },
     });
     if (error) toast.error(error.message);
     else toast.success("Account created! You can sign in now.");
@@ -78,7 +79,8 @@ const Auth = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const redirectUri = isNative() ? "metalpredict://auth/callback" : `${window.location.origin}/auth/callback`;
+    const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: redirectUri });
     if (error) toast.error("Google sign-in failed");
     setIsLoading(false);
   };
@@ -88,7 +90,7 @@ const Auth = () => {
     if (!forgotEmail) return;
     setIsLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: isNative() ? "metalpredict://auth/reset-password" : `${window.location.origin}/reset-password`,
     });
     setIsLoading(false);
     if (error) toast.error(error.message);

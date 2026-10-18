@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, Clock, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { useCity } from "@/contexts/CityContext";
 import { format } from "date-fns";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 
@@ -30,6 +31,7 @@ export const MetalPriceCard = ({
   lastUpdated,
 }: MetalPriceCardProps) => {
   const { formatPrice } = useCurrency();
+  const { selectedCity, getCityLabel } = useCity();
   const isPositive = change >= 0;
   const changePerGram = change / 31.1035;
 
@@ -81,7 +83,7 @@ export const MetalPriceCard = ({
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
             <div className="flex items-center gap-1">
               <Globe className="w-3 h-3 text-primary" />
-              <span className="font-semibold text-primary">Hyderabad</span>
+               <span className="font-semibold text-primary">{getCityLabel(selectedCity)}</span>
             </div>
             <ConfidenceBadge lastUpdated={lastUpdated} source={source} />
           </div>
